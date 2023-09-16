@@ -10,11 +10,11 @@ if test ! $(which brew); then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# if the first argument is not --no-brew, run the brew commands
-if [ "$1" != "--no-brew" ]; then
-  # update homebrew
-  brew update
+# update homebrew
+brew update
 
+# if the first argument is not --no-brew, install from Brewfile
+if [ "$1" != "--no-brew" ]; then
   # install everything in the Brewfile
   brew bundle --file ~/.dotfiles/Brewfile
 fi
