@@ -20,4 +20,4 @@ if [ "$1" != "--no-brew" ]; then
 fi
 
 # install the macosdefaults.sh script
-source ~/.dotfiles/macos
+source ~/.dotfiles/.macos
