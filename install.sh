@@ -10,11 +10,14 @@ if test ! $(which brew); then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# update homebrew
-brew update
+# if the first argument is not --no-brew, run the brew commands
+if [ "$1" != "--no-brew" ]; then
+  # update homebrew
+  brew update
 
-# install everything in the Brewfile
-brew bundle --file ~/.dotfiles/Brewfile
+  # install everything in the Brewfile
+  brew bundle --file ~/.dotfiles/Brewfile
+fi
 
 # install the macosdefaults.sh script
 source ~/.dotfiles/macos
