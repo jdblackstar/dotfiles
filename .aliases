@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # navigation
 alias ..='cd ..'
 alias ...='cd ../..'
