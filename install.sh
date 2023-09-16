@@ -17,4 +17,4 @@ brew update
 brew bundle --file ~/.dotfiles/Brewfile
 
 # install the macosdefaults.sh script
-source ~/.dotfiles/macosdefaults.sh
+source ~/.dotfiles/macos

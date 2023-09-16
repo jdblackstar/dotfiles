@@ -83,10 +83,10 @@ source $ZSH/oh-my-zsh.sh
 # export ARCHFLAGS="-arch x86_64"
 
 # source aliases
-source ~/.dotfiles/.aliases.sh
+source ~/.dotfiles/.aliases
 
 # source functions
-source ~/.dotfiles/.functions.sh
+source ~/.dotfiles/.functions
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
