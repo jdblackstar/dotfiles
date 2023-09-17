@@ -1,21 +1,14 @@
 tap "apple/apple", "http://github.com/apple/homebrew-apple"
 tap "homebrew/bundle"
-# Emacs dependency management
 brew "cask"
-# Modern diagram scripting language that turns text to diagrams
-brew "d2"
-# GitHub command-line tool
 brew "gh"
-# Password manager that keeps all passwords secure behind one password
 cask "1password"
-# Voice and text chat software
+cask "cursor"
 cask "discord"
-# Minimal installer for conda
 cask "miniconda"
-# Control your tools with a few keystrokes
 cask "raycast"
-# Music streaming service
 cask "spotify"
+cask "visual-studio-code"
 vscode "akamud.vscode-theme-onedark"
 vscode "akamud.vscode-theme-onelight"
 vscode "eamodio.gitlens"
