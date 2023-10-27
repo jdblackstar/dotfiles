@@ -52,5 +52,3 @@ chmod +x cleanup.sh
 
 ## TODO List
 [null for now]
-
-## Thank You!
