@@ -87,7 +87,9 @@ source $ZSH/oh-my-zsh.sh
 source ~/.dotfiles/.aliases
 
 # source functions
-source ~/.dotfiles/.functions
+source ~/.dotfiles/functions/.core_functions
+source ~/.dotfiles/functions/.dev_functions
+source ~/.dotfiles/functions/.network_functions
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+function docker_clean() {
+    docker container prune -f && docker volume prune -f && docker image prune -f
+}
+
+function git_cleanup() {
+    git branch --merged | egrep -v "(^\*|master|main|dev)" | xargs git branch -d
+}
+
+function quick_serve() {
+    python3 -m http.server "${1:-8000}"
+}

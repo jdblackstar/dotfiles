@@ -1,11 +1,25 @@
 #!/bin/bash
 
-function docker_clean() {
-    docker container prune -f && docker volume prune -f && docker image prune -f
+function batch_rename() {
+    local pattern="$1"
+    local replacement="$2"
+    for file in *; do
+        mv "$file" "${file//$pattern/$replacement}"
+    done
+}
+
+function ikill() {
+    ps aux | grep -v "grep" | grep "$1" | awk '{print $2, $11}' | fzf | awk '{print $1}' | xargs kill -9
 }
 
 function mkd() {
 	mkdir -p "$@" && cd "$_";
+}
+
+function search_replace() {
+    local search="$1"
+    local replace="$2"
+    grep -rl "$search" . | xargs sed -i "s/$search/$replace/g"
 }
 
 function targz() {
