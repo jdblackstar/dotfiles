@@ -1,9 +1,13 @@
 #!/bin/bash
 
 # create symbolic links required for proper system function
-ln -s ~/.dotfiles/git/.gitconfig ~/.gitconfig
-ln -s ~/.dotfiles/git/.gitignore_global ~/.gitignore_global
-ln -s ~/.dotfiles/.zshrc ~/.zshrc
+for file in .gitconfig .gitignore_global .zshrc Brewfile; do
+  if [ -f ~/.dotfiles/$file ]; then
+    ln -s ~/.dotfiles/$file ~/$file
+  else
+    echo "$file not found!"
+  fi
+done
 
 # check if homebrew is installed, otherwise install it
 if test ! $(which brew); then
