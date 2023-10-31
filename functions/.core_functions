@@ -8,6 +8,19 @@ function batch_rename() {
     done
 }
 
+function dcd() {
+    local dir_to_delete=$(pwd)
+    cd ..
+    echo "Are you sure you want to delete $dir_to_delete? [y/N]"
+    read -r response
+    if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
+    then
+        rm -rf "$dir_to_delete"
+    else
+        echo "Operation cancelled."
+    fi
+}
+
 function ikill() {
     ps aux | grep -v "grep" | grep "$1" | awk '{print $2, $11}' | fzf | awk '{print $1}' | xargs kill -9
 }
