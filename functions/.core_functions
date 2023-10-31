@@ -16,6 +16,7 @@ function dcd() {
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
     then
         rm -rf "$dir_to_delete"
+		echo "$dir_to_delete deleted.
     else
         echo "Operation cancelled."
     fi
