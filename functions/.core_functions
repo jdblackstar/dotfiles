@@ -30,6 +30,22 @@ function mkd() {
 	mkdir -p "$@" && cd "$_";
 }
 
+function obsdn() {
+	CURRENT_DIR=$(pwd)
+	cd /Users/Documents/Personal
+	if [ ! -d .git ]; then
+		git init
+		git remote add origin https://github.com/jdblackstar/obsidian.git
+		git branch -M main
+		git push -u origin main
+	fi
+	git commit -m "daily sync"
+	echo "Please complete 1Password verification and then press enter"
+	read
+	git push
+	cd $CURRENT_DIR
+}
+
 function search_replace() {
     local search="$1"
     local replace="$2"
