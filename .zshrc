@@ -89,6 +89,7 @@ source ~/.dotfiles/.aliases
 # source functions
 for file in ~/.dotfiles/functions/*; do
     source $file
+    echo "Source: $file"
 done
 
 # >>> conda initialize >>>
