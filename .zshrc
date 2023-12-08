@@ -87,9 +87,8 @@ source $ZSH/oh-my-zsh.sh
 source ~/.dotfiles/.aliases
 
 # source functions
-for file in ~/.dotfiles/functions/*; do
+find ~/.dotfiles/functions -type f | while read file; do
     source $file
-    echo "Source: $file"
 done
 
 # >>> conda initialize >>>
