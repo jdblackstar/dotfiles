@@ -1,6 +1,6 @@
 #!/bin/bash
 
 function get_ports() {
-    local connection_type=${1:-LISTEN}
+    local connection_type=$(echo ${1:-LISTEN} | tr '[:lower:]' '[:upper:]')
     sudo lsof -i -n -P | grep $connection_type
 }
