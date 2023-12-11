@@ -39,7 +39,7 @@ function obsdn() {
 		git branch -M main
 		git push -u origin main
 	fi
-	git commit -m "daily sync"
+	git commit -a -m "daily sync"
 	echo "Please complete 1Password verification and then press enter"
 	read
 	git push
