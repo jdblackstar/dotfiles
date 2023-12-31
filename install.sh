@@ -25,4 +25,9 @@ if [ "${1:-}" != "--no-brew" ]; then
 fi
 
 # install the macosdefaults.sh script
-source ~/.dotfiles/.macos
+if [ -f ~/.dotfiles/.macos ]; then
+  source ~/.dotfiles/.macos
+else
+  echo "~/.dotfiles/.macos not found!"
+  exit 1
+fi
