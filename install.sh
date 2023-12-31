@@ -14,9 +14,6 @@ if test ! $(which brew); then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# update homebrew
-brew update
-
 # if the first argument is not --no-brew, install from Brewfile
 if [ "$1" != "--no-brew" ]; then
   # install everything in the Brewfile
