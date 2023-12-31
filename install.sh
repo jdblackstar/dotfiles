@@ -3,9 +3,10 @@
 # create symbolic links required for proper system function
 for file in .gitconfig .gitignore_global .zshrc Brewfile; do
   if [ -f ~/.dotfiles/$file ]; then
-    ln -s ~/.dotfiles/$file ~/$file
+    ln -sf ~/.dotfiles/$file ~/$file
   else
     echo "$file not found!"
+    exit 1
   fi
 done
 
