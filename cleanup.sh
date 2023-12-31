@@ -5,8 +5,14 @@ current_dir=$(pwd)
 
 # Check if the current directory is .dotfiles
 if [[ $current_dir != *".dotfiles" ]]; then
-  echo "Changing directory to .dotfiles"
-  cd ~/.dotfiles
+  # Check if .dotfiles directory exists
+  if [ -d ~/.dotfiles ]; then
+    echo "Changing directory to .dotfiles"
+    cd ~/.dotfiles
+  else
+    echo "~/.dotfiles directory not found!"
+    exit 1
+  fi
 fi
 
 # Check if the remote URL is the HTTPS version
