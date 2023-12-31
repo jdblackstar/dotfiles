@@ -13,6 +13,9 @@ done
 # check if homebrew is installed, otherwise install it
 if test ! $(which brew); then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+else
+  # update homebrew if already installed
+  brew update
 fi
 
 # if the first argument is not --no-brew, install from Brewfile
