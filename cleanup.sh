@@ -15,8 +15,14 @@ if [[ $current_dir != *".dotfiles" ]]; then
   fi
 fi
 
-# Check if the remote URL is the HTTPS version
-if git remote get-url origin | grep -q '^https://'; then
-  # If it is, switch it to the SSH version
-  git remote set-url origin git@github.com:jdblackstar/dotfiles.git
+# Check if the current directory is a git repository
+if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+  # Check if the remote URL is the HTTPS version
+  if git remote get-url origin | grep -q '^https://'; then
+    # If it is, switch it to the SSH version
+    git remote set-url origin git@github.com:jdblackstar/dotfiles.git
+  fi
+else
+  echo "The current directory is not a git repository!"
+  exit 1
 fi
