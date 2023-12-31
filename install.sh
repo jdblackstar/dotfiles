@@ -19,7 +19,7 @@ else
 fi
 
 # if the first argument is not --no-brew, install from Brewfile
-if [ "$1" != "--no-brew" ]; then
+if [ "${1:-}" != "--no-brew" ]; then
   # install everything in the Brewfile
   brew bundle --file ~/.dotfiles/Brewfile
 fi
