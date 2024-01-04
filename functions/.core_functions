@@ -31,7 +31,7 @@ function mkd() {
 }
 
 function obsdn() {
-	CURRENT_DIR=$(pwd)
+	PREV_DIRECTORY=$(pwd)
 	cd /Users/Documents/Personal
 	if [ ! -d .git ]; then
 		git init
@@ -43,7 +43,7 @@ function obsdn() {
 	echo "Please complete 1Password verification and then press enter"
 	read
 	git push
-	cd $CURRENT_DIR
+	cd $PREV_DIRECTORY
 }
 
 function search_replace() {
