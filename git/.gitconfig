@@ -17,6 +17,7 @@
     ca = commit -a --verbose
     cm = commit -m
     cam = commit -a -m
+    cnv = commit --no-verify -m
     m = commit --amend --verbose
 
 	d = diff
