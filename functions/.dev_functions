@@ -5,7 +5,7 @@ function docker_clean() {
 }
 
 function git_cleanup() {
-    git branch --merged | egrep -v "(^\*|master|main|dev)" | xargs git branch -d
+    git branch --merged | egrep -v "(^\*|master|main|dev|staging)" | xargs git branch -d
 }
 
 function quick_serve() {
