@@ -92,6 +92,11 @@ find ~/.dotfiles/functions -type f | while read file; do
     source $file
 done
 
+# keybinds for history based suggestions
+# if i type `git` and then press up, it should only show me the last command that started with `git`
+# bindkey '^[OA' history-beginning-search-backward
+# bindkey '^[OB' history-beginning-search-forward
+
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$('/opt/homebrew/Caskroom/miniconda/base/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
