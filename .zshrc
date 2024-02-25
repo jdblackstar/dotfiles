@@ -3,11 +3,16 @@ export ZSH="$HOME/.oh-my-zsh"
 export PATH=~/.npm-global/bin:$PATH
 export PATH="/Users/josh/.local/bin:$PATH"
 
+# a bunch of globbing to ignore certain directories
+# just macOS things!!
 export FZF_DEFAULT_COMMAND='rg --files --hidden \
   --glob "!.git" \
   --glob "!node_modules" \
+  --glob "!Library" \ 
+  --glob "!Movies" \
   --glob "!Music" \
-  --glob "!Library" \
+  --glob "!Pictures" \
+  --glob "!Public" \
   '
 
 # Set name of the theme to load --- if set to "random", it will
