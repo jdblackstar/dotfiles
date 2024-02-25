@@ -3,17 +3,24 @@ export ZSH="$HOME/.oh-my-zsh"
 export PATH=~/.npm-global/bin:$PATH
 export PATH="/Users/josh/.local/bin:$PATH"
 
-# a bunch of globbing to ignore certain directories
+# a bunch of globbing to ignore certain directories in fzf
 # just macOS things!!
-export FZF_DEFAULT_COMMAND='rg --files --hidden \
-  --glob "!.git" \
-  --glob "!node_modules" \
-  --glob "!Library" \ 
-  --glob "!Movies" \
-  --glob "!Music" \
-  --glob "!Pictures" \
-  --glob "!Public" \
-  '
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  export FZF_DEFAULT_COMMAND='rg --files --hidden \
+    --glob "!.git" \
+    --glob "!node_modules" \
+    --glob "!Library" \
+    --glob "!Movies" \
+    --glob "!Music" \
+    --glob "!Pictures" \
+    --glob "!Public" \
+    '
+else
+  export FZF_DEFAULT_COMMAND='rg --files --hidden \
+    --glob "!.git" \
+    --glob "!node_modules" \
+    '
+fi
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
