@@ -5,6 +5,10 @@
 success_symbol = '[➜](bold green)'
 error_symbol = '[✗](bold red)'
 
+[cmd_duration]
+min_time = 10_000  # show command duration over 10,000 milliseconds (=10 sec)
+format = "\n(took [$duration]($style))"
+
 [package]
 disabled = true
 
@@ -12,5 +16,3 @@ disabled = true
 # truncation_length = 20
 # truncation_symbol = ''
 # ignore_branches = ['master', 'main']
-
-[nodejs]
