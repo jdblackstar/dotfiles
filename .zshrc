@@ -35,6 +35,9 @@ ENABLE_CORRECTION="true"
 
 plugins=(git)
 
+# keybindings
+bindkey -s '^e' 'vim $(fzf)\n'
+
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
