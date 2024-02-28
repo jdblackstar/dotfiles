@@ -13,6 +13,7 @@ format = "\n(took [$duration]($style))"
 disabled = true
 
 [git_branch]
+symbol = ""
 # truncation_length = 20
 # truncation_symbol = ''
 # ignore_branches = ['master', 'main']
