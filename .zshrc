@@ -36,7 +36,7 @@ ENABLE_CORRECTION="true"
 plugins=(git)
 
 # keybindings
-bindkey -s '^e' 'vim $(fzf)\n'
+bindkey -s '^e' 'FILE=$(fzf) && [ -n "$FILE" ] && vim "$FILE"\n'
 
 source $ZSH/oh-my-zsh.sh
 
