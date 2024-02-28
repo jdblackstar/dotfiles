@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# vim -> nvim
+alias vim=nvim
+
 # navigation
 alias ..="cd .."
 alias ...="cd ../.."
@@ -49,3 +52,4 @@ alias pumpitup="osascript -e 'set volume output volume 100'"
 # browser stuff
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias chromekill="ps ux | grep '[C]hrome Helper --type=renderer' | grep -v extension-process | tr -s ' ' | cut -d ' ' -f2 | xargs kill"
+
