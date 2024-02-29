@@ -72,7 +72,7 @@ fi
 
 # 5. sourcing of other dotfiles
 # aliases
-source ~/.dotfiles/.aliases
+source ~/.dotfiles/config/.aliases
 # functions
 find ~/.dotfiles/functions -type f | while read file; do
     source $file
