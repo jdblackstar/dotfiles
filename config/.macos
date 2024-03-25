@@ -23,3 +23,6 @@ defaults write com.apple.dock autohide -bool true
 defaults write com.apple.screencapture location -string "$HOME/Desktop"
 # set file type
 defaults write com.apple.screencapture type -string "png" # Possible values: BMP, GIF, JPG, PDF, TIFF
+
+# if we need full power mode
+# sudo pmset -c 2
