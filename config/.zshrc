@@ -13,6 +13,7 @@ Table of Contents:
 export ZSH="$HOME/.oh-my-zsh"
 export PATH=~/.npm-global/bin:$PATH
 export PATH="/Users/josh/.local/bin:$PATH"
+export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 
 # ---------------------------
 
