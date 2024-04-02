@@ -13,7 +13,20 @@ function quick_serve() {
 }
 
 function 1p() {
-    local python_file=$1  # default: ${1:-app.py}
+    if [ -z "$1" ]; then
+        echo "Error: No Python file specified."
+        return 1
+    else
+        local python_file=$1
+    fi
     local env_file=${2:-.env}
+    if [ ! -f "$python_file" ]; then
+        echo "Error: The specified Python file does not exist."
+        return 1
+    fi
+    if ! command -v op &> /dev/null; then
+        echo "Error: 'op' command is not available. Please ensure 1Password CLI is installed."
+        return 1
+    fi
     op run --env-file "$env_file" -- python "$python_file"
 }
