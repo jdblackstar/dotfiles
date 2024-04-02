@@ -20,6 +20,9 @@ function 1p() {
         local python_file=$1
     fi
     local env_file=${2:-.env}
+    if [ -z "$2" ]; then
+        echo "1Password is using the default environment file: .env"
+    fi
     if [ ! -f "$python_file" ]; then
         echo "Error: The specified Python file does not exist."
         return 1
