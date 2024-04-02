@@ -11,3 +11,10 @@ function git_cleanup() {
 function quick_serve() {
     python3 -m http.server "${1:-8000}"
 }
+
+function 1p() {
+    local python_file=$1  # default: ${1:-app.py}
+    local env_file=${2:-.env}
+    op run --env-file "$env_file" -- python "$python_file"
+}
+}
