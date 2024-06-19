@@ -51,7 +51,7 @@ export FZF_DEFAULT_OPTS=" \
 --color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
 
 # directories to ignore when using fzf
-if [[ "$OSTYPE" == "darwin"* ]]; then
+if [[ "$OSTYPE" == "darwin"* ]]; then # macOS specifically
   export FZF_DEFAULT_COMMAND='rg --files --hidden \
     --glob "!.git" \
     --glob "!node_modules" \
@@ -61,7 +61,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     --glob "!Pictures" \
     --glob "!Public" \
     '
-else
+else # other OS
   export FZF_DEFAULT_COMMAND='rg --files --hidden \
     --glob "!.git" \
     --glob "!node_modules" \
