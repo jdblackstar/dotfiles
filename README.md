@@ -1,5 +1,3 @@
-# Josh's dotfiles
-
 ## Steps to bootstrap a new Mac
 
 1. Install Apple's Command Line Tools, which are prerequisites for Git and Homebrew.
@@ -19,7 +17,7 @@ git clone git@github.com:jdblackstar/dotfiles.git ~/.dotfiles
 git clone https://github.com/jdblackstar/dotfiles.git ~/.dotfiles
 ```
 
-3. Change to directories
+3. Change to the newly cloned directory
 ```zsh
 cd ~/.dotfiles
 ```
@@ -27,13 +25,13 @@ cd ~/.dotfiles
 4. Add execute permissions to the install.sh script
 
 ```zsh
-chmod +x install.sh
+chmod +x scripts/install.sh
 ```
 
 5. Run the install script
 
 ```zsh
-./install.sh
+./scripts/install.sh
 ```
 
 ### Once setup of most applications is done (specifically 1password, as this is our ssh-agent) we can run the `cleanup.sh` script to finish up
@@ -41,13 +39,13 @@ chmod +x install.sh
 6. Add execute permission to the cleanup.sh script
 
 ```zsh
-chmod +x cleanup.sh
+chmod +x scripts/cleanup.sh
 ```
 
 7. Run the cleanup script
 
 ```zsh
-./cleanup.sh
+./scripts/cleanup.sh
 ```
 
 ## TODO List
