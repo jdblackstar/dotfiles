@@ -49,4 +49,6 @@ chmod +x scripts/cleanup.sh
 ```
 
 ## TODO List
-[null for now]
+[ ] - Flexoki Light & Dark theme for Cursor
+[ ] - Amphetamine install and setup
+[ ] - look into making the install.sh script a curl command, so include `xcode-select --install`
