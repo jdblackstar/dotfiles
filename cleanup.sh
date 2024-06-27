@@ -20,6 +20,7 @@ if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
   # Check if the remote URL is the HTTPS version
   if git remote get-url origin | grep -q '^https://'; then
     # If it is, switch it to the SSH version
+    echo "changing remote URL from https to SSH"
     git remote set-url origin git@github.com:jdblackstar/dotfiles.git
   fi
 else
