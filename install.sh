@@ -19,33 +19,11 @@ create_and_verify_symlink() {
   fi
 }
 
-# since installing oh-my-zsh will write to our ~/.zshrc file,
-# let's install oh-my-zsh here so we can overwrite with our symlink
-# Check if oh-my-zsh is installed
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  echo "Installing oh-my-zsh..."
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-  echo "oh-my-zsh installed successfully."
-else
-  echo "oh-my-zsh is already installed."
-fi
-
-
 # create symbolic links required for proper system function
-# Safely remove existing files before creating symlinks
-for file in ~/.gitconfig ~/.gitignore_global ~/.zshrc; do
-  if [ -f "$file" ]; then
-    echo "Backing up existing $file to ${file}.bak"
-    mv "$file" "${file}.bak"
-  elif [ -L "$file" ]; then
-    echo "Removing existing symlink $file"
-    rm "$file"
-  fi
-done
-
 create_and_verify_symlink ~/.dotfiles/git/.gitconfig ~/.gitconfig
 create_and_verify_symlink ~/.dotfiles/git/.gitignore_global ~/.gitignore_global
 create_and_verify_symlink ~/.dotfiles/config/.zshrc ~/.zshrc
+create_and_verify_symlink ~/.dotfiles/config/starship.toml ~/.config/starship.toml
 
 # check if homebrew is installed, otherwise install it
 if test ! $(which brew); then
@@ -76,3 +54,7 @@ if [ -f ~/.dotfiles/config/.macos ]; then
 else
   echo "~/.dotfiles/config/.macos not found!"
 fi
+
+# Terminal set up
+# download the catppuccin mocha theme
+curl -Lo ~/.config/alacritty/catppuccin-mocha.toml https://github.com/catppuccin/alacritty/raw/main/catppuccin-mocha.toml
