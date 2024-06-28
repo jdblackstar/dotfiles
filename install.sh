@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# TABLE OF CONTENTS
+# 1. Create and verify symbolic links of config files
+# 2. Install Homebrew and Brewfile
+# 3. Install macOS specific settings
+# 4. Terminal, and TMUX setup
+
 # Function to create and verify symbolic links
 create_and_verify_symlink() {
   # source_file is where we make changes
