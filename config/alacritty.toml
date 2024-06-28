@@ -10,6 +10,14 @@ italic = { family = "JetBrainsMono Nerd Font", style = "Italic" }
 bold_italic = { family = "JetBrainsMono Nerd Font", style = "Bold Italic" }
 size = 18.0
 
+[cursor]
+style = { shape = "Block", blinking = "On" }
+blink_interval = 750
+
 [window]
-decorations = "Buttonless"
+decorations = "Transparent"
 opacity = 0.9
+
+[window.padding]
+x = 15
+y = 30

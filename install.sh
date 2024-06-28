@@ -50,16 +50,21 @@ if [ "${1:-}" != "--no-brew" ]; then
   fi
 fi
 
-# Execute the .macos script
-if [ -f ~/.dotfiles/config/.macos ]; then
-  echo "Executing ~/.dotfiles/config/.macos"
-  chmod +x ~/.dotfiles/config/.macos
-  ~/.dotfiles/config/.macos
-  echo "Finished executing ~/.dotfiles/config/.macos"
+# Check if the OS is macOS
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # Execute the .macos script
+  if [ -f ~/.dotfiles/config/.macos ]; then
+    echo "Executing ~/.dotfiles/config/.macos"
+    chmod +x ~/.dotfiles/config/.macos
+    ~/.dotfiles/config/.macos
+    echo "Finished executing ~/.dotfiles/config/.macos"
 
-  killall Dock
+    killall Dock
+  else
+    echo "~/.dotfiles/config/.macos not found!"
+  fi
 else
-  echo "~/.dotfiles/config/.macos not found!"
+  echo "This script is intended for macOS. Skipping macOS-specific configurations."
 fi
 
 # Terminal set up
