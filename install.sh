@@ -29,6 +29,7 @@ create_and_verify_symlink() {
 create_and_verify_symlink ~/.dotfiles/git/.gitconfig ~/.gitconfig
 create_and_verify_symlink ~/.dotfiles/git/.gitignore_global ~/.gitignore_global
 create_and_verify_symlink ~/.dotfiles/config/.zshrc ~/.zshrc
+create_and_verify_symlink ~/.dotfiles/config/tmux.conf ~/.tmux.conf
 create_and_verify_symlink ~/.dotfiles/config/starship.toml ~/.config/starship.toml
 
 # check if homebrew is installed, otherwise install it
@@ -64,3 +65,17 @@ fi
 # Terminal set up
 # download the catppuccin mocha theme
 curl -Lo ~/.config/alacritty/catppuccin-mocha.toml https://github.com/catppuccin/alacritty/raw/main/catppuccin-mocha.toml
+
+# Install TPM (Tmux Plugin Manager)
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+if [ ! -d "$TPM_DIR" ]; then
+  echo "TPM not found. Installing..."
+  git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+  if [ $? -eq 0 ]; then
+    echo "TPM installed successfully."
+  else
+    echo "Failed to install TPM. Please check your internet connection and try again."
+  fi
+else
+  echo "TPM is already installed."
+fi
