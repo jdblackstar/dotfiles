@@ -19,6 +19,8 @@ export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 # 2. keybindings
 # ctrl + E, brings up an fzf menu that will open the selected file in vim
 bindkey -s '^e' 'FILE=$(fzf) && [ -n "$FILE" ] && vim "$FILE"\n'
+# ctrl + Q, brings up an fzf menu that will open the selected file in Finder
+bindkey -s '^q' 'FILE=$(fzf) && [ -n "$FILE" ] && open -R "$FILE"\n'
 
 # keybinds for history based suggestions
 # commented out because this is handled by oh-my-zsh
