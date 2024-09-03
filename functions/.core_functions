@@ -40,7 +40,7 @@ function obsdn() {
 		git push -u origin main
 	fi
 	git commit -a -m "daily sync"
-	echo "Please complete 1Password verification and then press enter"
+	echo "Please complete 1Password verification..."
 	read
 	git push
 	cd $PREV_DIRECTORY
