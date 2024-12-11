@@ -84,3 +84,5 @@ done
 # 6. evals
 eval "$(zoxide init --cmd cd zsh)"
 eval "$(starship init zsh)"
+source /Users/josh/.config/op/plugins.sh
+source ~/.config/op/plugins.sh
