@@ -24,6 +24,9 @@ alias c="clear"
 alias h="history"
 alias df="df -h"
 
+# tailscale
+alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+
 # programming
 PRIMARY_EDITOR="cursor"
 SECONDARY_EDITOR="code"
