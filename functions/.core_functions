@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
 function batch_rename() {
     local pattern="$1"
@@ -83,4 +83,150 @@ function targz() {
 	);
 
 	echo "${tmpFile}.gz ($((zippedSize / 1000)) kB) created successfully.";
+}
+
+function wlog() {
+    local USAGE="Usage: 
+    wlog \"Your message here\"          # Direct message
+    wlog -t work \"Your message\"       # Add a tag
+    wlog                               # Open in editor
+    wlog -m \"Your message\"           # Explicit message flag"
+
+    local tag=""
+    local message=""
+    local use_editor=false
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                echo "$USAGE"
+                return 0
+                ;;
+            -t|--tag)
+                if [ -z "$2" ]; then
+                    echo "Error: Tag value required" >&2
+                    echo "$USAGE" >&2
+                    return 1
+                fi
+                tag="$2"
+                shift 2
+                ;;
+            -m|--message)
+                if [ -z "$2" ]; then
+                    echo "Error: Message required" >&2
+                    echo "$USAGE" >&2
+                    return 1
+                fi
+                message="$2"
+                shift 2
+                ;;
+            *)
+                if [ -z "$message" ]; then
+                    message="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    # If no message provided, use editor
+    if [ -z "$message" ]; then
+        use_editor=true
+        local temp_file=$(mktemp)
+        local editor=${EDITOR:-vim}
+        
+        # Add template to temp file
+        cat > "$temp_file" << EOF
+# Enter your worklog message above this line
+# Lines starting with '#' will be ignored
+#
+# Tags: ${tag:-none}
+# 
+# Example format:
+# Working on feature X with #hashtags and @mentions
+EOF
+        
+        # Open editor
+        $editor "$temp_file"
+        
+        # Read message from temp file, excluding comments
+        message=$(grep -v '^#' "$temp_file" | sed '/^$/d' | tr '\n' ' ' | sed 's/^ *//;s/ *$//')
+        rm "$temp_file"
+        
+        # Check if message is empty
+        if [ -z "$message" ]; then
+            echo "Aborted: no message provided" >&2
+            return 1
+        fi
+    fi
+    
+    local dir="$HOME/worklog"
+    local file="$dir/log.txt"
+    local repo="git@github.com:jdblackstar/worklog.git"
+    local time=$(date '+%Y-%m-%d %H:%M:%S')
+    local exit_code=0
+
+    # Ensure directory exists
+    mkdir -p "$dir" || { echo "Failed to create directory: $dir" >&2; return 1; }
+
+    # Initialize git repo if needed
+    if [ ! -d "$dir/.git" ]; then
+        git -C "$dir" init || { echo "Failed to initialize git repo" >&2; return 1; }
+        git -C "$dir" remote add origin "$repo" || { echo "Failed to add remote" >&2; return 1; }
+    fi
+
+    # Create log file if needed
+    if [ ! -f "$file" ]; then
+        printf "# Worklog\n\n" > "$file" || { echo "Failed to create log file" >&2; return 1; }
+    fi
+
+    # Acquire lock file
+    local lock_file="$dir/.wlog.lock"
+    if ! mkdir "$lock_file" 2>/dev/null; then
+        echo "Another wlog process is running. Please try again." >&2
+        return 1
+    fi
+
+    # Ensure lock file is removed on exit
+    trap 'rm -rf "$lock_file"' EXIT
+
+    # Pull latest changes
+    if ! git -C "$dir" pull origin main 2>/dev/null; then
+        echo "Warning: Failed to pull latest changes" >&2
+        exit_code=1
+    fi
+
+    # Format the log entry
+    local log_entry="[$time]"
+    if [ -n "$tag" ]; then
+        log_entry="$log_entry [$tag]"
+    fi
+    log_entry="$log_entry $message"
+
+    # Append log entry
+    echo "$log_entry" >> "$file" || { echo "Failed to write to log file" >&2; return 1; }
+
+    # Git operations with more descriptive commit message
+    local commit_msg="[$time]"
+    [ -n "$tag" ] && commit_msg="$commit_msg [$tag]"
+    commit_msg="$commit_msg Worklog entry"
+
+    if ! git -C "$dir" add "$file" || \
+       ! git -C "$dir" commit -m "$commit_msg" || \
+       ! git -C "$dir" push origin main; then
+        echo "Warning: Git operations failed" >&2
+        exit_code=1
+    fi
+
+    # Clean up lock file
+    rm -rf "$lock_file"
+
+    if [ $exit_code -eq 0 ]; then
+        echo "✓ Logged: $message"
+        [ -n "$tag" ] && echo "  Tag: $tag"
+    else
+        echo "⚠ Logged with warnings: $message"
+    fi
+    return $exit_code
 }
