@@ -90,11 +90,16 @@ function wlog() {
     wlog \"Your message here\"          # Direct message
     wlog -t work \"Your message\"       # Add a tag
     wlog                               # Open in editor
-    wlog -m \"Your message\"           # Explicit message flag"
+    wlog -m \"Your message\"           # Explicit message flag
+    wlog -v                           # Show git operations (verbose)
+    wlog -s, --status                 # Show worklog repo status"
 
     local tag=""
     local message=""
     local use_editor=false
+    local verbose=false
+    local show_status=false
+    local dir="$HOME/worklog"
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -102,6 +107,14 @@ function wlog() {
             -h|--help)
                 echo "$USAGE"
                 return 0
+                ;;
+            -s|--status)
+                show_status=true
+                shift
+                ;;
+            -v|--verbose)
+                verbose=true
+                shift
                 ;;
             -t|--tag)
                 if [ -z "$2" ]; then
@@ -129,6 +142,21 @@ function wlog() {
                 ;;
         esac
     done
+
+    # Handle status request first and exit
+    if $show_status; then
+        if [ ! -d "$dir/.git" ]; then
+            echo "Worklog repository not initialized"
+            return 1
+        fi
+        echo "Worklog Repository Status:"
+        echo "------------------------"
+        git -C "$dir" status
+        echo "\nRecent Entries:"
+        echo "---------------"
+        tail -n 5 "$dir/log.txt" 2>/dev/null || echo "No entries yet"
+        return 0
+    fi
 
     # If no message provided, use editor
     if [ -z "$message" ]; then
@@ -161,7 +189,6 @@ EOF
         fi
     fi
     
-    local dir="$HOME/worklog"
     local file="$dir/log.txt"
     local repo="git@github.com:jdblackstar/worklog.git"
     local time=$(date '+%Y-%m-%d %H:%M:%S')
@@ -192,9 +219,16 @@ EOF
     trap 'rm -rf "$lock_file"' EXIT
 
     # Pull latest changes
-    if ! git -C "$dir" pull origin main 2>/dev/null; then
-        echo "Warning: Failed to pull latest changes" >&2
-        exit_code=1
+    if $verbose; then
+        if ! git -C "$dir" pull origin main; then
+            echo "Warning: Failed to pull latest changes" >&2
+            exit_code=1
+        fi
+    else
+        if ! git -C "$dir" pull origin main 2>/dev/null; then
+            echo "Warning: Failed to pull latest changes" >&2
+            exit_code=1
+        fi
     fi
 
     # Format the log entry
@@ -212,11 +246,20 @@ EOF
     [ -n "$tag" ] && commit_msg="$commit_msg [$tag]"
     commit_msg="$commit_msg Worklog entry"
 
-    if ! git -C "$dir" add "$file" || \
-       ! git -C "$dir" commit -m "$commit_msg" || \
-       ! git -C "$dir" push origin main; then
-        echo "Warning: Git operations failed" >&2
-        exit_code=1
+    if $verbose; then
+        if ! git -C "$dir" add "$file" || \
+           ! git -C "$dir" commit -m "$commit_msg" || \
+           ! git -C "$dir" push origin main; then
+            echo "Warning: Git operations failed" >&2
+            exit_code=1
+        fi
+    else
+        if ! git -C "$dir" add "$file" 2>/dev/null || \
+           ! git -C "$dir" commit -m "$commit_msg" 2>/dev/null || \
+           ! git -C "$dir" push origin main 2>/dev/null; then
+            echo "Warning: Git operations failed" >&2
+            exit_code=1
+        fi
     fi
 
     # Clean up lock file
