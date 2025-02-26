@@ -71,19 +71,32 @@ function targz() {
 
 function wlog() {
     local USAGE="Usage: 
-    wlog \"Your message here\"          # Direct message
-    wlog -t work \"Your message\"       # Add a tag
-    wlog                               # Open in editor
-    wlog -m \"Your message\"           # Explicit message flag
+    wlog \"Your message here\"        # Direct message
+    wlog -t work \"Your message\"     # Add a tag
+    wlog                              # Open in editor
+    wlog -m \"Your message\"          # Explicit message flag
     wlog -v                           # Show git operations (verbose)
-    wlog -s, --status                 # Show worklog repo status"
+    wlog -s, --status                 # Show worklog repo status
+    wlog --sync                       # Sync local changes without adding entry"
 
     local tag=""
     local message=""
     local use_editor=false
     local verbose=false
     local show_status=false
+    local sync_only=false
     local dir="$HOME/worklog"
+    local lock_file="$dir/.wlog.lock"
+    
+    # Local function to acquire lock
+    _acquire_lock() {
+        if ! mkdir "$lock_file" 2>/dev/null; then
+            echo "Another wlog process is running. Please try again." >&2
+            return 1
+        fi
+        trap 'rm -rf "$lock_file"' EXIT
+        return 0
+    }
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -91,6 +104,10 @@ function wlog() {
             -h|--help)
                 echo "$USAGE"
                 return 0
+                ;;
+            --sync)
+                sync_only=true
+                shift
                 ;;
             -s|--status)
                 show_status=true
@@ -139,6 +156,28 @@ function wlog() {
         echo "\nRecent Entries:"
         echo "---------------"
         tail -n 5 "$dir/log.txt" 2>/dev/null || echo "No entries yet"
+        return 0
+    fi
+
+    # Handle sync-only mode
+    if $sync_only; then
+        if [ ! -d "$dir/.git" ]; then
+            echo "Worklog repository not initialized"
+            return 1
+        fi
+        
+        echo "Syncing worklog repository..."
+        
+        # Acquire lock
+        _acquire_lock || return 1
+        
+        # Simple git operations with error handling
+        $verbose && git -C "$dir" pull origin main || git -C "$dir" pull origin main 2>/dev/null
+        $verbose && git -C "$dir" add . || git -C "$dir" add . 2>/dev/null
+        $verbose && git -C "$dir" commit -m "Manual sync $(date '+%Y-%m-%d %H:%M:%S')" || git -C "$dir" commit -m "Manual sync $(date '+%Y-%m-%d %H:%M:%S')" 2>/dev/null
+        $verbose && git -C "$dir" push origin main || git -C "$dir" push origin main 2>/dev/null
+        
+        echo "✓ Worklog synced"
         return 0
     fi
 
@@ -192,15 +231,8 @@ EOF
         printf "# Worklog\n\n" > "$file" || { echo "Failed to create log file" >&2; return 1; }
     fi
 
-    # Acquire lock file
-    local lock_file="$dir/.wlog.lock"
-    if ! mkdir "$lock_file" 2>/dev/null; then
-        echo "Another wlog process is running. Please try again." >&2
-        return 1
-    fi
-
-    # Ensure lock file is removed on exit
-    trap 'rm -rf "$lock_file"' EXIT
+    # Acquire lock
+    _acquire_lock || return 1
 
     # Pull latest changes
     if $verbose; then
@@ -246,9 +278,6 @@ EOF
         fi
     fi
 
-    # Clean up lock file
-    rm -rf "$lock_file"
-
     if [ $exit_code -eq 0 ]; then
         echo "✓ Logged: $message"
         [ -n "$tag" ] && echo "  Tag: $tag"
@@ -257,3 +286,6 @@ EOF
     fi
     return $exit_code
 }
+
+# Remove any existing alias
+unalias wlog 2>/dev/null || true
