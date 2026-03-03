@@ -2,3 +2,5 @@
 
 **/*.lock
 **/*.lock.json
+
+__pycache__/
