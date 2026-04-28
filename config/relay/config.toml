@@ -1,0 +1,22 @@
+enabled_tools = [
+    "claude",
+    "codex",
+    "cursor",
+    "opencode",
+]
+central_dir = "/Users/josh/.config/relay/commands"
+central_skills_dir = "/Users/josh/.config/relay/skills"
+central_agents_dir = "/Users/josh/.config/relay/agents"
+central_rules_dir = "/Users/josh/.config/relay/rules"
+claude_dir = "/Users/josh/.claude/commands"
+claude_skills_dir = "/Users/josh/.claude/skills"
+cursor_dir = "/Users/josh/.cursor/commands"
+opencode_commands_dir = "/Users/josh/.config/opencode/command"
+opencode_skills_dir = "/Users/josh/.config/opencode/skill"
+opencode_agents_file = "/Users/josh/.config/opencode/AGENTS.md"
+codex_dir = "/Users/josh/.codex/prompts"
+codex_skills_dir = "/Users/josh/.codex/skills"
+codex_rules_file = "/Users/josh/.codex/rules/default.rules"
+codex_agents_file = "/Users/josh/.codex/AGENTS.md"
+
+[verified_versions]
