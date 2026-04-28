@@ -1,0 +1,22 @@
+enabled_tools = [
+    "claude",
+    "codex",
+    "cursor",
+    "opencode",
+]
+central_dir = "~/.config/relay/commands"
+central_skills_dir = "~/.config/relay/skills"
+central_agents_dir = "~/.config/relay/agents"
+central_rules_dir = "~/.config/relay/rules"
+claude_dir = "~/.claude/commands"
+claude_skills_dir = "~/.claude/skills"
+cursor_dir = "~/.cursor/commands"
+opencode_commands_dir = "~/.config/opencode/command"
+opencode_skills_dir = "~/.config/opencode/skill"
+opencode_agents_file = "~/.config/opencode/AGENTS.md"
+codex_dir = "~/.codex/prompts"
+codex_skills_dir = "~/.codex/skills"
+codex_rules_file = "~/.codex/rules/default.rules"
+codex_agents_file = "~/.codex/AGENTS.md"
+
+[verified_versions]
