@@ -108,6 +108,19 @@ teardown() {
   assert_log_contains "killall Dock"
 }
 
+@test "install can skip macOS defaults on Darwin" {
+  export OSTYPE="darwin23"
+  write_minimal_macos_fixture "$TEST_DOTFILES"
+  install_stub killall killall.stub
+
+  run bash "$TEST_DOTFILES/install.sh" --no-brew --no-macos
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Skipping macOS defaults"
+  assert_log_not_contains "killall Dock"
+  [[ "$output" != *"fixture-macos-ran"* ]]
+}
+
 @test "install rejects unknown arguments" {
   run bash "$TEST_DOTFILES/install.sh" --no-brew --not-a-real-flag
 

@@ -11,6 +11,7 @@ OH_MY_ZSH_DIR="$HOME/.oh-my-zsh"
 OH_MY_ZSH_INSTALL_URL="https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 SKIP_BREW=0
+SKIP_MACOS=0
 
 log() {
   printf '==> %s\n' "$1"
@@ -29,10 +30,11 @@ require_cmd() {
 
 usage() {
   cat <<'EOF'
-Usage: ./install.sh [--no-brew]
+Usage: ./install.sh [--no-brew] [--no-macos]
 
 Options:
   --no-brew    Skip Homebrew install/update and Brewfile processing.
+  --no-macos   Skip macOS defaults.
 EOF
 }
 
@@ -209,6 +211,9 @@ while [ "$#" -gt 0 ]; do
     --no-brew)
       SKIP_BREW=1
       ;;
+    --no-macos)
+      SKIP_MACOS=1
+      ;;
     -h|--help)
       usage
       exit 0
@@ -247,6 +252,11 @@ else
   log "Skipping Homebrew and Brewfile"
 fi
 
-run_macos_defaults
+if [ "$SKIP_MACOS" -eq 0 ]; then
+  run_macos_defaults
+else
+  log "Skipping macOS defaults"
+fi
+
 download_if_changed "$ALACRITTY_THEME_URL" "$ALACRITTY_THEME_PATH"
 install_tpm_if_missing

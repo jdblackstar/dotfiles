@@ -20,6 +20,12 @@ If you want to pass flags through to the local installer, use `sh -s --`:
 curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap.sh | sh -s -- --no-brew
 ```
 
+For a remote SSH rerun where you do not want an interactive sudo prompt from macOS defaults:
+
+```zsh
+curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap.sh | sh -s -- --no-brew --no-macos
+```
+
 ### What the bootstrap does
 
 1. Ensures `git` is available.
@@ -54,6 +60,7 @@ bash ~/.dotfiles/cleanup.sh
 ## Notes
 
 - `install.sh` is designed to be idempotent and safe to rerun.
+- Use `--no-macos` when rerunning over SSH and you only want links/tooling refreshes.
 - `cleanup.sh` is also rerun-safe; it exits cleanly if the remote already uses SSH.
 - The installer creates required config directories, links managed dotfiles, installs bootstrap dependencies, and only updates downloaded assets when they change.
 
