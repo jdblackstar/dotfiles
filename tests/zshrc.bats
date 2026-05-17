@@ -22,8 +22,8 @@ teardown() {
 }
 
 @test "zshrc loads cleanly without optional tools installed" {
-  run env HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" OSTYPE="darwin23" \
-    zsh -f -c 'source "$HOME/.dotfiles/config/.zshrc"; print -r -- "TEST_FUNCTIONS_LOADED=${TEST_FUNCTIONS_LOADED:-missing}"; print -r -- "$FZF_DEFAULT_COMMAND"; print -r -- "$PATH"'
+  run env HOME="$HOME" PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+    zsh -f -c 'OSTYPE=darwin23; source "$HOME/.dotfiles/config/.zshrc"; print -r -- "TEST_FUNCTIONS_LOADED=${TEST_FUNCTIONS_LOADED:-missing}"; print -r -- "$FZF_DEFAULT_COMMAND"; print -r -- "$PATH"'
 
   [ "$status" -eq 0 ]
   assert_output_contains "TEST_FUNCTIONS_LOADED=1"

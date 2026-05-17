@@ -67,9 +67,9 @@ teardown() {
   install_stub xcode-select xcode-select.stub
   export STUB_UNAME_S="Darwin"
 
-  run env PATH="$TEST_BIN:/bin" HOME="$HOME" \
+  run env PATH="$TEST_BIN" HOME="$HOME" \
     DOTFILES_REPO_URL="$REMOTE_REPO" DOTFILES_DIR="$HOME/.dotfiles" \
-    sh "$PROJECT_ROOT/bootstrap.sh"
+    /bin/sh "$PROJECT_ROOT/bootstrap.sh"
 
   [ "$status" -eq 1 ]
   assert_output_contains "Launching Command Line Tools installer"

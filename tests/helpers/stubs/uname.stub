@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 : "${TEST_STUB_LOG:?}"
 printf 'uname %s\n' "$*" >>"$TEST_STUB_LOG"
