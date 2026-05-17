@@ -10,8 +10,8 @@ Table of Contents:
 
 # 1. PATH
 export ZSH="$HOME/.oh-my-zsh"
-export PATH=~/.npm-global/bin:$PATH
-export PATH="/Users/josh/.local/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 
 # ---------------------------
@@ -40,7 +40,9 @@ plugins=(
     git
 )
 
-source $ZSH/oh-my-zsh.sh
+if [ -r "$ZSH/oh-my-zsh.sh" ]; then
+  source "$ZSH/oh-my-zsh.sh"
+fi
 
 # ---------------------------
 
@@ -73,19 +75,32 @@ fi
 
 # 5. sourcing of other dotfiles
 # aliases
-source ~/.dotfiles/config/.aliases
+if [ -r "$HOME/.dotfiles/config/.aliases" ]; then
+  source "$HOME/.dotfiles/config/.aliases"
+fi
 # functions
-find ~/.dotfiles/functions -type f | while read file; do
-    source $file
-done
+if [ -d "$HOME/.dotfiles/functions" ]; then
+  for file in "$HOME"/.dotfiles/functions/.?*(N); do
+    [ -f "$file" ] && source "$file"
+  done
+fi
 
 # ---------------------------
 
 # 6. evals
-eval "$(zoxide init --cmd cd zsh)"
-eval "$(starship init zsh)"
-source /Users/josh/.config/op/plugins.sh
-source ~/.config/op/plugins.sh
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init --cmd cd zsh)"
+fi
+
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+fi
+
+if [ -r "$HOME/.config/op/plugins.sh" ]; then
+  source "$HOME/.config/op/plugins.sh"
+fi
 
 # Entire CLI shell completion
-autoload -Uz compinit && compinit && source <(entire completion zsh)
+if command -v entire >/dev/null 2>&1; then
+  autoload -Uz compinit && compinit && source <(entire completion zsh)
+fi

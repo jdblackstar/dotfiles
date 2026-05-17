@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'git %s\n' "$*" >>"$TEST_STUB_LOG"
+
+if [ "${1:-}" = "clone" ]; then
+  destination="${!#}"
+  mkdir -p "$destination/.git"
+  exit 0
+fi
+
+exit 0

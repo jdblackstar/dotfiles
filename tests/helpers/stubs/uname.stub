@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'uname %s\n' "$*" >>"$TEST_STUB_LOG"
+# First argument is typically -s
+if [ "${1:-}" = "-s" ]; then
+  printf '%s\n' "${STUB_UNAME_S:-Darwin}"
+  exit 0
+fi
+printf '%s\n' "${STUB_UNAME_S:-Darwin}"
+exit 0

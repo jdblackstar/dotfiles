@@ -1,29 +1,44 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Get the current working directory
-current_dir=$(pwd)
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXPECTED_HTTPS_URLS=(
+  "https://github.com/jdblackstar/dotfiles.git"
+  "https://github.com/jdblackstar/dotfiles"
+)
+EXPECTED_SSH_URL="git@github.com:jdblackstar/dotfiles.git"
 
-# Check if the current directory is .dotfiles
-if [[ $current_dir != *".dotfiles" ]]; then
-  # Check if .dotfiles directory exists
-  if [ -d ~/.dotfiles ]; then
-    echo "Changing directory to .dotfiles"
-    cd ~/.dotfiles
-  else
-    echo "~/.dotfiles directory not found!"
-    exit 1
-  fi
-fi
+log() {
+  printf '==> %s\n' "$1"
+}
 
-# Check if the current directory is a git repository
-if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-  # Check if the remote URL is the HTTPS version
-  if git remote get-url origin | grep -q '^https://'; then
-    # If it is, switch it to the SSH version
-    echo "changing remote URL from https to SSH"
-    git remote set-url origin git@github.com:jdblackstar/dotfiles.git
-  fi
-else
-  echo "The current directory is not a git repository!"
+warn() {
+  printf 'warning: %s\n' "$1" >&2
+}
+
+if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  warn "Not a git repository: $REPO_ROOT"
   exit 1
 fi
+
+if ! git -C "$REPO_ROOT" remote get-url origin >/dev/null 2>&1; then
+  warn "Remote 'origin' is not configured"
+  exit 1
+fi
+
+current_origin_url="$(git -C "$REPO_ROOT" remote get-url origin)"
+
+if [ "$current_origin_url" = "$EXPECTED_SSH_URL" ]; then
+  log "Origin already uses SSH"
+  exit 0
+fi
+
+for https_url in "${EXPECTED_HTTPS_URLS[@]}"; do
+  if [ "$current_origin_url" = "$https_url" ]; then
+    log "Switching origin from HTTPS to SSH"
+    git -C "$REPO_ROOT" remote set-url origin "$EXPECTED_SSH_URL"
+    exit 0
+  fi
+done
+
+warn "Origin uses an unexpected URL, leaving it unchanged: $current_origin_url"

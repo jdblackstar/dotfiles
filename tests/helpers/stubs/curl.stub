@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'curl %s\n' "$*" >>"$TEST_STUB_LOG"
+
+output_file=""
+expect_output_file=0
+
+for arg in "$@"; do
+  if [ "$expect_output_file" -eq 1 ]; then
+    output_file="$arg"
+    expect_output_file=0
+    continue
+  fi
+
+  case "$arg" in
+    -o)
+      expect_output_file=1
+      ;;
+    --output=*)
+      output_file="${arg#*=}"
+      ;;
+  esac
+done
+
+if [ -n "$output_file" ]; then
+  printf '%s' "${STUB_CURL_FILE_CONTENT:-stub-file-content}" >"$output_file"
+  exit 0
+fi
+
+printf '%s\n' "${STUB_CURL_STDOUT_CONTENT:-mkdir -p \"$HOME/.oh-my-zsh\"}"

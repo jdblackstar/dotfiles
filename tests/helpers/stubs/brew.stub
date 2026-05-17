@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'brew %s\n' "$*" >>"$TEST_STUB_LOG"
+
+if [ "${1:-}" = "bundle" ] && [ "${2:-}" = "check" ]; then
+  exit "${STUB_BREW_BUNDLE_CHECK_STATUS:-1}"
+fi
+
+exit 0

@@ -24,8 +24,10 @@ alias c="clear"
 alias h="history"
 alias df="df -h"
 
-# tailscale
-alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+# tailscale app-store installs do not put the CLI on PATH.
+if ! command -v tailscale >/dev/null 2>&1 && [ -x "/Applications/Tailscale.app/Contents/MacOS/Tailscale" ]; then
+  alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+fi
 
 # programming
 PRIMARY_EDITOR="cursor"
@@ -55,4 +57,3 @@ alias pumpitup="osascript -e 'set volume output volume 100'"
 # browser stuff
 alias chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
 alias chromekill="ps ux | grep '[C]hrome Helper --type=renderer' | grep -v extension-process | tr -s ' ' | cut -d ' ' -f2 | xargs kill"
-
