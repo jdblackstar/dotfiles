@@ -38,7 +38,6 @@ copy_dotfiles_fixture() {
   cp "$PROJECT_ROOT/config/.vimrc" "$destination/config/.vimrc"
   cp "$PROJECT_ROOT/config/tmux.conf" "$destination/config/tmux.conf"
   cp "$PROJECT_ROOT/config/starship.toml" "$destination/config/starship.toml"
-  cp "$PROJECT_ROOT/config/alacritty.toml" "$destination/config/alacritty.toml"
   cp "$PROJECT_ROOT/config/.macos" "$destination/config/.macos"
   cp "$PROJECT_ROOT/config/Brewfile" "$destination/config/Brewfile"
 

@@ -100,7 +100,6 @@ require_symlink "$HOME/.zshrc" "$DOTFILES_DIR/config/.zshrc"
 require_symlink "$HOME/.vimrc" "$DOTFILES_DIR/config/.vimrc"
 require_symlink "$HOME/.tmux.conf" "$DOTFILES_DIR/config/tmux.conf"
 require_symlink "$HOME/.config/starship.toml" "$DOTFILES_DIR/config/starship.toml"
-require_symlink "$HOME/.config/alacritty/alacritty.toml" "$DOTFILES_DIR/config/alacritty.toml"
 
 # CLI tools from Brewfile (formula names -> common binaries)
 require_command git
@@ -113,10 +112,9 @@ require_command zoxide
 require_command eza
 require_command nvim
 
-# Oh My Zsh, TPM, Alacritty theme (install.sh)
+# Oh My Zsh and TPM (install.sh)
 require_dir "$HOME/.oh-my-zsh" "Oh My Zsh directory"
 require_git_dir "$HOME/.tmux/plugins/tpm" "TPM"
-require_file "$HOME/.config/alacritty/catppuccin-mocha.toml" "Alacritty Catppuccin theme"
 
 # Optional: 1Password SSH signer referenced by managed .gitconfig
 if [ -f "$DOTFILES_DIR/git/.gitconfig" ] && grep -q 'op-ssh-sign' "$DOTFILES_DIR/git/.gitconfig" 2>/dev/null; then

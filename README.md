@@ -101,7 +101,7 @@ After a real bootstrap on a Mac, you can sanity-check the result without mutatin
 bash tests/verify-work-laptop.sh
 ```
 
-This checks expected symlinks, a set of CLI tools that match [`config/Brewfile`](config/Brewfile), Oh My Zsh, TPM, and the Alacritty theme file. It warns (but does not fail) if the 1Password SSH signer path from [`git/.gitconfig`](git/.gitconfig) is missing. Override the repo location with `DOTFILES_DIR` if needed.
+This checks expected symlinks, a set of CLI tools that match [`config/Brewfile`](config/Brewfile), Oh My Zsh, and TPM. It warns (but does not fail) if the 1Password SSH signer path from [`git/.gitconfig`](git/.gitconfig) is missing. Override the repo location with `DOTFILES_DIR` if needed.
 
 **What remains manual or environment-specific**
 

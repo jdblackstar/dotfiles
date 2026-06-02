@@ -7,7 +7,6 @@ setup() {
   export TEST_DOTFILES="$TEST_ROOT/dotfiles"
   export OSTYPE="linux-gnu"
   export STUB_CURL_STDOUT_CONTENT='mkdir -p "$HOME/.oh-my-zsh"'
-  export STUB_CURL_FILE_CONTENT='catppuccin-theme'
 
   copy_dotfiles_fixture "$TEST_DOTFILES"
   install_stub curl curl.stub
@@ -29,10 +28,8 @@ teardown() {
   assert_symlink_target "$HOME/.vimrc" "$TEST_DOTFILES/config/.vimrc"
   assert_symlink_target "$HOME/.tmux.conf" "$TEST_DOTFILES/config/tmux.conf"
   assert_symlink_target "$HOME/.config/starship.toml" "$TEST_DOTFILES/config/starship.toml"
-  assert_symlink_target "$HOME/.config/alacritty/alacritty.toml" "$TEST_DOTFILES/config/alacritty.toml"
   [ -d "$HOME/.oh-my-zsh" ]
   [ -d "$HOME/.tmux/plugins/tpm/.git" ]
-  assert_file_contains "$HOME/.config/alacritty/catppuccin-mocha.toml" "catppuccin-theme"
   assert_log_not_contains "brew "
 }
 
@@ -52,15 +49,12 @@ teardown() {
   [ "$(count_matches "$HOME/.zshrc.backup.*")" = "1" ]
 }
 
-@test "install skips TPM clone and theme rewrite when both are already present" {
-  mkdir -p "$HOME/.config/alacritty"
-  printf '%s' "$STUB_CURL_FILE_CONTENT" >"$HOME/.config/alacritty/catppuccin-mocha.toml"
+@test "install skips TPM clone when already present" {
   mkdir -p "$HOME/.tmux/plugins/tpm/.git"
 
   run bash "$TEST_DOTFILES/install.sh" --no-brew
 
   [ "$status" -eq 0 ]
-  assert_output_contains "Already up to date: $HOME/.config/alacritty/catppuccin-mocha.toml"
   assert_output_contains "TPM already installed"
 }
 

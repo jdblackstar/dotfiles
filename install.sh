@@ -4,9 +4,6 @@ set -euo pipefail
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BREWFILE_PATH="$DOTFILES_DIR/config/Brewfile"
 MACOS_SCRIPT="$DOTFILES_DIR/config/.macos"
-ALACRITTY_CONFIG_DIR="$HOME/.config/alacritty"
-ALACRITTY_THEME_PATH="$ALACRITTY_CONFIG_DIR/catppuccin-mocha.toml"
-ALACRITTY_THEME_URL="https://github.com/catppuccin/alacritty/raw/main/catppuccin-mocha.toml"
 OH_MY_ZSH_DIR="$HOME/.oh-my-zsh"
 OH_MY_ZSH_INSTALL_URL="https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh"
 TPM_DIR="$HOME/.tmux/plugins/tpm"
@@ -169,26 +166,6 @@ run_macos_defaults() {
   killall Dock >/dev/null 2>&1 || true
 }
 
-download_if_changed() {
-  local url="$1"
-  local target_file="$2"
-  local temp_file
-
-  ensure_dir "$(dirname "$target_file")"
-  temp_file="$(mktemp)"
-
-  curl -fsSL "$url" -o "$temp_file"
-
-  if [ -f "$target_file" ] && cmp -s "$temp_file" "$target_file"; then
-    rm -f "$temp_file"
-    log "Already up to date: $target_file"
-    return 0
-  fi
-
-  mv "$temp_file" "$target_file"
-  log "Updated $target_file"
-}
-
 install_tpm_if_missing() {
   ensure_dir "$(dirname "$TPM_DIR")"
 
@@ -232,7 +209,6 @@ require_cmd git
 
 log "Preparing config directories"
 ensure_dir "$HOME/.config"
-ensure_dir "$ALACRITTY_CONFIG_DIR"
 
 log "Linking dotfiles"
 ensure_symlink "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
@@ -241,7 +217,6 @@ ensure_symlink "$DOTFILES_DIR/config/.zshrc" "$HOME/.zshrc"
 ensure_symlink "$DOTFILES_DIR/config/.vimrc" "$HOME/.vimrc"
 ensure_symlink "$DOTFILES_DIR/config/tmux.conf" "$HOME/.tmux.conf"
 ensure_symlink "$DOTFILES_DIR/config/starship.toml" "$HOME/.config/starship.toml"
-ensure_symlink "$DOTFILES_DIR/config/alacritty.toml" "$ALACRITTY_CONFIG_DIR/alacritty.toml"
 
 install_oh_my_zsh_if_missing
 
@@ -258,5 +233,4 @@ else
   log "Skipping macOS defaults"
 fi
 
-download_if_changed "$ALACRITTY_THEME_URL" "$ALACRITTY_THEME_PATH"
 install_tpm_if_missing
