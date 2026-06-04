@@ -5,8 +5,8 @@ osascript -e 'tell application "System Preferences" to quit'
 sudo -v
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 
-# Always show scrollbars
-defaults write NSGlobalDomain AppleShowScrollBars -string "Always" # Possible values: `WhenScrolling`, `Automatic` and `Always`
+# Show scrollbars using the system default behavior
+defaults write NSGlobalDomain AppleShowScrollBars -string "Automatic" # Possible values: `WhenScrolling`, `Automatic` and `Always`
 
 # Disable automatic rearrangement of Spaces based on most recent use
 defaults write com.apple.dock mru-spaces -bool false
