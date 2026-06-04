@@ -1,0 +1,14 @@
+PROFILE_NAME="personal"
+PROFILE_GITCONFIG="$DOTFILES_DIR/git/.gitconfig"
+PROFILE_MACOS_BREWFILES=(
+  "$DOTFILES_DIR/packages/brew/base.Brewfile"
+  "$DOTFILES_DIR/packages/brew/personal.Brewfile"
+)
+PROFILE_LINUX_PACKAGE_FILES=(
+  "$DOTFILES_DIR/packages/linux/base.txt"
+  "$DOTFILES_DIR/packages/linux/personal.txt"
+)
+PROFILE_INSTALL_OH_MY_ZSH=1
+PROFILE_INSTALL_TPM=1
+PROFILE_RUN_MACOS_DEFAULTS=1
+PROFILE_LINK_RELAY=0

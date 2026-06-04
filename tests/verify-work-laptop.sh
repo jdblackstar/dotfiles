@@ -83,6 +83,23 @@ require_file() {
   return 0
 }
 
+require_file_contains() {
+  local path="$1"
+  local expected="$2"
+  local label="$3"
+
+  if [ ! -f "$path" ]; then
+    err "Missing $label: $path"
+    return 1
+  fi
+  if ! grep -Fq -- "$expected" "$path"; then
+    err "$label did not contain expected value: $expected"
+    return 1
+  fi
+  info "$label"
+  return 0
+}
+
 if [[ "$(uname -s)" != "Darwin" ]]; then
   warn "This verifier targets macOS; some checks may not apply."
 fi
@@ -93,13 +110,15 @@ if [ ! -d "$DOTFILES_DIR" ]; then
   exit 1
 fi
 
-# Symlinks created by install.sh (paths must match install.sh)
-require_symlink "$HOME/.gitconfig" "$DOTFILES_DIR/git/.gitconfig"
+# Symlinks created by install.sh --profile work (paths must match install.sh)
+require_file_contains "$HOME/.config/dotfiles/profile" "work" "dotfiles profile marker"
+require_symlink "$HOME/.gitconfig" "$DOTFILES_DIR/git/work.gitconfig"
 require_symlink "$HOME/.gitignore_global" "$DOTFILES_DIR/git/.gitignore_global"
 require_symlink "$HOME/.zshrc" "$DOTFILES_DIR/config/.zshrc"
 require_symlink "$HOME/.vimrc" "$DOTFILES_DIR/config/.vimrc"
 require_symlink "$HOME/.tmux.conf" "$DOTFILES_DIR/config/tmux.conf"
 require_symlink "$HOME/.config/starship.toml" "$DOTFILES_DIR/config/starship.toml"
+require_symlink "$HOME/.config/relay" "$DOTFILES_DIR/config/relay"
 
 # CLI tools from Brewfile (formula names -> common binaries)
 require_command git
@@ -116,13 +135,9 @@ require_command nvim
 require_dir "$HOME/.oh-my-zsh" "Oh My Zsh directory"
 require_git_dir "$HOME/.tmux/plugins/tpm" "TPM"
 
-# Optional: 1Password SSH signer referenced by managed .gitconfig
-if [ -f "$DOTFILES_DIR/git/.gitconfig" ] && grep -q 'op-ssh-sign' "$DOTFILES_DIR/git/.gitconfig" 2>/dev/null; then
-  _signer_path=""
-  _signer_path="$(git config --file "$DOTFILES_DIR/git/.gitconfig" --get gpg.ssh.program 2>/dev/null || true)"
-  if [ -n "$_signer_path" ] && [ ! -x "$_signer_path" ]; then
-    warn "Git signing program not executable (install 1Password or adjust git config): $_signer_path"
-  fi
+# Work identity is intentionally local/untracked.
+if [ ! -f "$HOME/.gitconfig.work.local" ]; then
+  warn "Optional work Git identity file is missing: $HOME/.gitconfig.work.local"
 fi
 
 printf '\n==> %d error(s), %d warning(s)\n' "$ERRORS" "$WARNINGS"

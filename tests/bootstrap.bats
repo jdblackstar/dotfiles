@@ -14,12 +14,13 @@ teardown() {
 
 @test "bootstrap clones a missing repo and forwards installer arguments" {
   run env DOTFILES_REPO_URL="$REMOTE_REPO" DOTFILES_DIR="$HOME/.dotfiles" \
-    sh "$PROJECT_ROOT/bootstrap.sh" --no-brew
+    sh "$PROJECT_ROOT/bootstrap.sh" --profile agent
 
   [ "$status" -eq 0 ]
   [ -d "$HOME/.dotfiles/.git" ]
   assert_file_contains "$HOME/install-version.txt" "v1"
-  assert_file_contains "$HOME/install-args.txt" "--no-brew"
+  assert_file_contains "$HOME/install-args.txt" "--profile"
+  assert_file_contains "$HOME/install-args.txt" "agent"
 }
 
 @test "bootstrap fast-forwards a clean repo before running the installer" {

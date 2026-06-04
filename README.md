@@ -1,4 +1,4 @@
-## Bootstrap a new Mac
+## Bootstrap a machine
 
 ### Preferred: one-command bootstrap
 
@@ -14,24 +14,41 @@ Once `blackstar.dev/install` is wired up to serve the same script, the intended 
 curl -fsSL https://blackstar.dev/install | sh
 ```
 
-If you want to pass flags through to the local installer, use `sh -s --`:
+The default profile is `personal`, and the installer auto-detects `macos` or `linux` from `uname`. To choose another profile, pass it through with `sh -s --`:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap.sh | sh -s -- --no-brew
+curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap.sh | sh -s -- --profile work
 ```
 
-For a remote SSH rerun where you do not want an interactive sudo prompt from macOS defaults:
+For an agent/container setup:
 
 ```zsh
-curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap.sh | sh -s -- --no-brew --no-macos
+curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap.sh | sh -s -- --profile agent
 ```
+
+To override platform detection:
+
+```zsh
+curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap.sh | sh -s -- --profile work --platform linux
+```
+
+### Profiles
+
+- `personal`: everyday personal setup, personal Git identity/signing, personal package layer.
+- `work`: everyday coding setup, shared dev tools, relay agent config, work-safe Git config with local identity override.
+- `agent`: headless dev setup, terminal links, relay agent config, no GUI package layer, no personal Git identity.
+
+### Platforms
+
+- `macos`: Homebrew package layers and optional macOS defaults.
+- `linux`: Linux package layers when available; no macOS defaults or Homebrew casks.
 
 ### What the bootstrap does
 
 1. Ensures `git` is available.
 2. Clones this repo to `~/.dotfiles` if it is missing.
 3. Pulls the latest changes if `~/.dotfiles` already exists and is clean.
-4. Runs `install.sh` from the local clone.
+4. Runs `install.sh` from the local clone with the selected profile and detected platform.
 
 If the local repo has uncommitted changes, the bootstrap script leaves it alone and reuses the existing checkout.
 
@@ -44,7 +61,7 @@ If you prefer not to pipe into `sh`, you can still bootstrap manually:
 ```zsh
 xcode-select --install
 git clone https://github.com/jdblackstar/dotfiles.git ~/.dotfiles
-bash ~/.dotfiles/install.sh
+bash ~/.dotfiles/install.sh --profile work --platform macos
 ```
 
 ### After 1Password / SSH setup
@@ -60,9 +77,8 @@ bash ~/.dotfiles/cleanup.sh
 ## Notes
 
 - `install.sh` is designed to be idempotent and safe to rerun.
-- Use `--no-macos` when rerunning over SSH and you only want links/tooling refreshes.
 - `cleanup.sh` is also rerun-safe; it exits cleanly if the remote already uses SSH.
-- The installer creates required config directories, links managed dotfiles, installs bootstrap dependencies, and only updates downloaded assets when they change.
+- The installer creates required config directories, records the selected profile at `~/.config/dotfiles/profile` and platform at `~/.config/dotfiles/platform`, links managed dotfiles, and runs only the package/defaults layers owned by that profile/platform pair.
 
 ## Testing
 
@@ -81,7 +97,7 @@ GitHub Actions runs the same command on every push and pull request (see [`.gith
 **What this suite is meant to catch**
 
 - `bootstrap.sh` clone/update behavior and installer handoff
-- `install.sh` symlink layout, backups, idempotency, `--no-brew`, brew-bundle flow (with stubs), Darwin defaults hook (minimal fixture script + stubbed `killall`), TPM edge cases, and unknown-flag handling
+- `install.sh` profile/platform selection, symlink layout, backups, idempotency, brew-bundle flow (with stubs), Linux package skip behavior, Darwin defaults hook (minimal fixture script + stubbed `killall`), TPM edge cases, and unknown-flag handling
 - `cleanup.sh` remote URL rewriting
 - `config/.zshrc` syntax and basic load behavior (requires `zsh` on the runner)
 
@@ -91,7 +107,7 @@ GitHub Actions runs the same command on every push and pull request (see [`.gith
 - Real `xcode-select --install` or live Oh My Zsh / TPM downloads (those calls are stubbed or satisfied with fixtures)
 - Applying your full [`config/.macos`](config/.macos) script (installer tests use a tiny fixture in place of the real defaults script)
 
-Contributor note: `install.sh` honors `DOTFILES_TEST_BREW_BIN`, `DOTFILES_SKIP_HOMEBREW_INSTALL`, and `DOTFILES_TEST_IGNORE_SYSTEM_BREW` only for hermetic tests; they are unused during a normal install.
+Contributor note: `install.sh` honors `DOTFILES_TEST_BREW_BIN`, `DOTFILES_SKIP_HOMEBREW_INSTALL`, `DOTFILES_TEST_IGNORE_SYSTEM_BREW`, and `DOTFILES_SKIP_LINUX_PACKAGES` only for hermetic tests; they are unused during a normal install.
 
 ### Work-laptop verification (real machine, read-only)
 
@@ -101,10 +117,11 @@ After a real bootstrap on a Mac, you can sanity-check the result without mutatin
 bash tests/verify-work-laptop.sh
 ```
 
-This checks expected symlinks, a set of CLI tools that match [`config/Brewfile`](config/Brewfile), Oh My Zsh, and TPM. It warns (but does not fail) if the 1Password SSH signer path from [`git/.gitconfig`](git/.gitconfig) is missing. Override the repo location with `DOTFILES_DIR` if needed.
+This checks expected `work` profile symlinks, a set of CLI tools that match [`packages/brew/base.Brewfile`](packages/brew/base.Brewfile), relay config, Oh My Zsh, and TPM. It warns (but does not fail) if the local work Git identity file is missing. Override the repo location with `DOTFILES_DIR` if needed.
 
 **What remains manual or environment-specific**
 
 - Signing into the Mac App Store or GUI apps installed via cask
+- Work Git identity in `~/.gitconfig.work.local`
 - 1Password / SSH agent and any org-specific SSO
 - Full macOS defaults from `config/.macos` (sudo, Finder/Dock preferences)
