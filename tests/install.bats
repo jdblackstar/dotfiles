@@ -125,6 +125,7 @@ teardown() {
 
 @test "personal profile applies macOS defaults on Darwin and restarts Dock" {
   export OSTYPE="darwin23"
+  export STUB_UNAME_S="Darwin"
   write_minimal_macos_fixture "$TEST_DOTFILES"
   install_stub brew brew.stub
   install_stub killall killall.stub
@@ -152,6 +153,20 @@ teardown() {
   assert_symlink_target "$HOME/.gitconfig" "$TEST_DOTFILES/git/.gitconfig"
   assert_file_contains "$HOME/.config/dotfiles/platform" "linux"
   assert_log_not_contains "brew "
+}
+
+@test "personal Linux profile runs apt-get directly when already root" {
+  install_stub apt-get apt-get.stub
+  install_stub id id.stub
+  export STUB_ID_U=0
+
+  run bash "$TEST_DOTFILES/install.sh" --profile personal --platform linux
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Installing Linux packages with apt-get"
+  assert_log_contains "apt-get update"
+  assert_log_contains "apt-get install -y"
+  assert_log_not_contains "sudo "
 }
 
 @test "install rejects unknown profiles" {

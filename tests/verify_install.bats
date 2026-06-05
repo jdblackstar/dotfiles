@@ -16,6 +16,8 @@ setup() {
   install_stub zoxide noop.stub
   install_stub eza noop.stub
   install_stub nvim noop.stub
+  install_stub uname uname.stub
+  export STUB_UNAME_S="Darwin"
 }
 
 teardown() {

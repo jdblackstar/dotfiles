@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'apt-get %s\n' "$*" >>"$TEST_STUB_LOG"
+
+exit 0

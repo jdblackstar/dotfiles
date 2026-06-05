@@ -287,6 +287,20 @@ linux_package_manager() {
   return 1
 }
 
+run_privileged() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+    return $?
+  fi
+
+  if ! command -v sudo >/dev/null 2>&1; then
+    warn "sudo is required to install Linux packages when not running as root"
+    return 1
+  fi
+
+  sudo "$@"
+}
+
 run_linux_packages() {
   local package_manager
   local package_file
@@ -335,14 +349,14 @@ run_linux_packages() {
   log "Installing Linux packages with $package_manager"
   case "$package_manager" in
     apt-get)
-      sudo apt-get update
-      sudo apt-get install -y "${packages[@]}"
+      run_privileged apt-get update
+      run_privileged apt-get install -y "${packages[@]}"
       ;;
     dnf)
-      sudo dnf install -y "${packages[@]}"
+      run_privileged dnf install -y "${packages[@]}"
       ;;
     pacman)
-      sudo pacman -Sy --needed --noconfirm "${packages[@]}"
+      run_privileged pacman -Sy --needed --noconfirm "${packages[@]}"
       ;;
   esac
 }
@@ -355,6 +369,11 @@ run_macos_defaults() {
 
   if [ "$PLATFORM_SUPPORTS_MACOS_DEFAULTS" -eq 0 ]; then
     log "Skipping macOS defaults for platform: $PLATFORM_NAME"
+    return 0
+  fi
+
+  if [ "$(uname -s)" != "Darwin" ]; then
+    log "Skipping macOS defaults on non-macOS host"
     return 0
   fi
 
