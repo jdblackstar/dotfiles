@@ -83,6 +83,7 @@ teardown() {
   assert_output_contains "Installing Brewfile dependencies: $TEST_DOTFILES/packages/brew/base.Brewfile"
   assert_output_contains "Installing Brewfile dependencies: $TEST_DOTFILES/packages/brew/personal.Brewfile"
   assert_symlink_target "$HOME/.gitconfig" "$TEST_DOTFILES/git/.gitconfig"
+  assert_symlink_target "$HOME/.config/relay" "$TEST_DOTFILES/config/relay"
   assert_log_contains "brew update"
   assert_log_contains "brew bundle --file $TEST_DOTFILES/packages/brew/base.Brewfile"
   assert_log_contains "brew bundle --file $TEST_DOTFILES/packages/brew/personal.Brewfile"

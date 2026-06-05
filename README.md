@@ -34,7 +34,7 @@ curl -fsSL https://raw.githubusercontent.com/jdblackstar/dotfiles/main/bootstrap
 
 ### Profiles
 
-- `personal`: everyday personal setup, personal Git identity/signing, personal package layer.
+- `personal`: primary personal workstation setup, personal Git identity/signing, personal package layer, relay config.
 - `work`: everyday coding setup, shared dev tools, relay agent config, work-safe Git config with local identity override.
 - `agent`: headless dev setup, terminal links, relay agent config, no GUI package layer, no personal Git identity.
 
@@ -109,19 +109,26 @@ GitHub Actions runs the same command on every push and pull request (see [`.gith
 
 Contributor note: `install.sh` honors `DOTFILES_TEST_BREW_BIN`, `DOTFILES_SKIP_HOMEBREW_INSTALL`, `DOTFILES_TEST_IGNORE_SYSTEM_BREW`, and `DOTFILES_SKIP_LINUX_PACKAGES` only for hermetic tests; they are unused during a normal install.
 
-### Work-laptop verification (real machine, read-only)
+### Mac install verification (real machine, read-only)
 
 After a real bootstrap on a Mac, you can sanity-check the result without mutating anything:
 
 ```zsh
-bash tests/verify-work-laptop.sh
+bash tests/verify-mac-install.sh --profile personal
 ```
 
-This checks expected `work` profile symlinks, a set of CLI tools that match [`packages/brew/base.Brewfile`](packages/brew/base.Brewfile), relay config, Oh My Zsh, and TPM. It warns (but does not fail) if the local work Git identity file is missing. Override the repo location with `DOTFILES_DIR` if needed.
+For a work laptop, run:
+
+```zsh
+bash tests/verify-mac-install.sh --profile work
+```
+
+This checks expected profile symlinks, profile markers, a set of CLI tools that match [`packages/brew/base.Brewfile`](packages/brew/base.Brewfile), relay config, Oh My Zsh when the profile installs it, and TPM. It warns (but does not fail) if a profile-specific local Git identity file is missing. Override the repo location with `DOTFILES_DIR` if needed.
 
 **What remains manual or environment-specific**
 
 - Signing into the Mac App Store or GUI apps installed via cask
 - Work Git identity in `~/.gitconfig.work.local`
+- Agent Git identity in `~/.gitconfig.agent.local`
 - 1Password / SSH agent and any org-specific SSO
 - Full macOS defaults from `config/.macos` (sudo, Finder/Dock preferences)
