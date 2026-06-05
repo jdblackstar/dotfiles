@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "${1:-}" = "-u" ]; then
+  printf '%s\n' "${STUB_ID_U:-0}"
+  exit 0
+fi
+
+/usr/bin/id "$@"

@@ -27,11 +27,15 @@ teardown_test_env() {
 copy_dotfiles_fixture() {
   local destination="${1:-$HOME/.dotfiles}"
 
-  mkdir -p "$destination/config" "$destination/git"
+  mkdir -p "$destination/config" "$destination/git" "$destination/packages"
 
   cp "$PROJECT_ROOT/install.sh" "$destination/install.sh"
   cp "$PROJECT_ROOT/bootstrap.sh" "$destination/bootstrap.sh"
   cp "$PROJECT_ROOT/cleanup.sh" "$destination/cleanup.sh"
+  cp -R "$PROJECT_ROOT/profiles" "$destination/profiles"
+  cp -R "$PROJECT_ROOT/platforms" "$destination/platforms"
+  cp -R "$PROJECT_ROOT/packages/brew" "$destination/packages/brew"
+  cp -R "$PROJECT_ROOT/packages/linux" "$destination/packages/linux"
 
   cp "$PROJECT_ROOT/config/.zshrc" "$destination/config/.zshrc"
   cp "$PROJECT_ROOT/config/.aliases" "$destination/config/.aliases"
@@ -39,9 +43,11 @@ copy_dotfiles_fixture() {
   cp "$PROJECT_ROOT/config/tmux.conf" "$destination/config/tmux.conf"
   cp "$PROJECT_ROOT/config/starship.toml" "$destination/config/starship.toml"
   cp "$PROJECT_ROOT/config/.macos" "$destination/config/.macos"
-  cp "$PROJECT_ROOT/config/Brewfile" "$destination/config/Brewfile"
+  cp -R "$PROJECT_ROOT/config/relay" "$destination/config/relay"
 
   cp "$PROJECT_ROOT/git/.gitconfig" "$destination/git/.gitconfig"
+  cp "$PROJECT_ROOT/git/work.gitconfig" "$destination/git/work.gitconfig"
+  cp "$PROJECT_ROOT/git/agent.gitconfig" "$destination/git/agent.gitconfig"
   cp "$PROJECT_ROOT/git/.gitignore_global" "$destination/git/.gitignore_global"
 }
 
