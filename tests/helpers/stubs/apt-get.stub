@@ -4,4 +4,24 @@ set -euo pipefail
 : "${TEST_STUB_LOG:?}"
 printf 'apt-get %s\n' "$*" >>"$TEST_STUB_LOG"
 
+if [ "${1:-}" = "install" ] && [ -n "${STUB_APT_GET_INSTALL_BIN_DIR:-}" ]; then
+  shift
+  for package_name in "$@"; do
+    case "$package_name" in
+      -*) ;;
+      curl)
+        cat >"$STUB_APT_GET_INSTALL_BIN_DIR/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'curl %s\n' "$*" >>"$TEST_STUB_LOG"
+printf '%s\n' "${STUB_CURL_STDOUT_CONTENT:-mkdir -p \"$HOME/.oh-my-zsh\"}"
+EOF
+        chmod +x "$STUB_APT_GET_INSTALL_BIN_DIR/curl"
+        ;;
+    esac
+  done
+fi
+
 exit 0

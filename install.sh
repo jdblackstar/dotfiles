@@ -460,11 +460,6 @@ done
 load_profile
 load_platform
 
-require_cmd git
-if [ "$PROFILE_INSTALL_OH_MY_ZSH" -eq 1 ] || { [ "$PLATFORM_PACKAGE_MANAGER" = "brew" ] && [ "${#PROFILE_MACOS_BREWFILES[@]}" -gt 0 ]; }; then
-  require_cmd curl
-fi
-
 log "Preparing config directories"
 ensure_dir "$HOME/.config"
 write_install_markers
@@ -482,4 +477,7 @@ run_linux_packages
 install_oh_my_zsh_if_missing
 run_brew_bundles
 run_macos_defaults
+if [ "$PROFILE_INSTALL_TPM" -eq 1 ]; then
+  require_cmd git
+fi
 install_tpm_if_missing

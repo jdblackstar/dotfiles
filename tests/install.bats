@@ -161,6 +161,8 @@ teardown() {
 
   install_stub apt-get apt-get.stub
   install_stub id id.stub
+  rm "$TEST_BIN/curl"
+  export STUB_APT_GET_INSTALL_BIN_DIR="$TEST_BIN"
   export STUB_ID_U=0
 
   run bash "$TEST_DOTFILES/install.sh" --profile personal --platform linux
