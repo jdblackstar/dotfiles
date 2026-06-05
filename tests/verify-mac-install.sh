@@ -157,16 +157,19 @@ case "$PROFILE" in
   personal)
     gitconfig="$DOTFILES_DIR/git/.gitconfig"
     installs_oh_my_zsh=1
+    installs_package_tools=1
     local_identity=""
     ;;
   work)
     gitconfig="$DOTFILES_DIR/git/work.gitconfig"
     installs_oh_my_zsh=1
+    installs_package_tools=1
     local_identity="$HOME/.gitconfig.work.local"
     ;;
   agent)
     gitconfig="$DOTFILES_DIR/git/agent.gitconfig"
     installs_oh_my_zsh=0
+    installs_package_tools=0
     local_identity="$HOME/.gitconfig.agent.local"
     ;;
 esac
@@ -182,14 +185,17 @@ require_symlink "$HOME/.config/starship.toml" "$DOTFILES_DIR/config/starship.tom
 require_symlink "$HOME/.config/relay" "$DOTFILES_DIR/config/relay"
 
 require_command git
-require_command curl
-require_command rg
-require_command fzf
-require_command tmux
-require_command starship
-require_command zoxide
-require_command eza
-require_command nvim
+
+if [ "$installs_package_tools" -eq 1 ]; then
+  require_command curl
+  require_command rg
+  require_command fzf
+  require_command tmux
+  require_command starship
+  require_command zoxide
+  require_command eza
+  require_command nvim
+fi
 
 if [ "$installs_oh_my_zsh" -eq 1 ]; then
   require_dir "$HOME/.oh-my-zsh" "Oh My Zsh directory"

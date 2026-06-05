@@ -64,3 +64,16 @@ prepare_verified_profile() {
   assert_output_contains "Optional local Git identity file is missing: $HOME/.gitconfig.work.local"
   assert_output_contains "==> 0 error(s), 1 warning(s)"
 }
+
+@test "mac install verifier skips package tools for agent profile" {
+  prepare_verified_profile "agent" "$TEST_DOTFILES/git/agent.gitconfig"
+  rm "$TEST_BIN/curl" "$TEST_BIN/rg" "$TEST_BIN/fzf" "$TEST_BIN/tmux" \
+    "$TEST_BIN/starship" "$TEST_BIN/zoxide" "$TEST_BIN/eza" "$TEST_BIN/nvim"
+
+  run env DOTFILES_DIR="$TEST_DOTFILES" "$PROJECT_ROOT/tests/verify-mac-install.sh" --profile agent
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "ok: dotfiles profile marker"
+  assert_output_contains "Optional local Git identity file is missing: $HOME/.gitconfig.agent.local"
+  assert_output_contains "==> 0 error(s), 1 warning(s)"
+}
