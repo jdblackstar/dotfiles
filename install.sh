@@ -269,6 +269,11 @@ run_brew_bundles() {
 }
 
 linux_package_manager() {
+  if [ -n "${DOTFILES_TEST_LINUX_PACKAGE_MANAGER:-}" ]; then
+    printf '%s\n' "$DOTFILES_TEST_LINUX_PACKAGE_MANAGER"
+    return 0
+  fi
+
   if command -v apt-get >/dev/null 2>&1; then
     printf '%s\n' apt-get
     return 0
@@ -285,6 +290,20 @@ linux_package_manager() {
   fi
 
   return 1
+}
+
+linux_package_name() {
+  local package_manager="$1"
+  local package_name="$2"
+
+  case "$package_manager:$package_name" in
+    pacman:python3)
+      printf '%s\n' python
+      ;;
+    *)
+      printf '%s\n' "$package_name"
+      ;;
+  esac
 }
 
 run_privileged() {
@@ -337,7 +356,7 @@ run_linux_packages() {
           continue
           ;;
       esac
-      packages+=("$package_name")
+      packages+=("$(linux_package_name "$package_manager" "$package_name")")
     done <"$package_file"
   done
 
@@ -356,7 +375,7 @@ run_linux_packages() {
       run_privileged dnf install -y "${packages[@]}"
       ;;
     pacman)
-      run_privileged pacman -Sy --needed --noconfirm "${packages[@]}"
+      run_privileged pacman -Syu --needed --noconfirm "${packages[@]}"
       ;;
   esac
 }

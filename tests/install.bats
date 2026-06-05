@@ -179,6 +179,22 @@ teardown() {
   [ "$package_line" -lt "$curl_line" ]
 }
 
+@test "personal Linux profile uses safe pacman upgrade and package names" {
+  install_stub pacman pacman.stub
+  install_stub id id.stub
+  export DOTFILES_TEST_LINUX_PACKAGE_MANAGER=pacman
+  export STUB_ID_U=0
+
+  run bash "$TEST_DOTFILES/install.sh" --profile personal --platform linux
+
+  [ "$status" -eq 0 ]
+  assert_output_contains "Installing Linux packages with pacman"
+  assert_log_contains "pacman -Syu --needed --noconfirm"
+  assert_log_contains " python "
+  assert_log_not_contains "python3"
+  assert_log_not_contains "pacman -Sy --needed --noconfirm"
+}
+
 @test "install rejects unknown profiles" {
   run bash "$TEST_DOTFILES/install.sh" --profile not-real
 
