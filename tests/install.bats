@@ -156,6 +156,9 @@ teardown() {
 }
 
 @test "personal Linux profile runs apt-get directly when already root" {
+  local package_line
+  local curl_line
+
   install_stub apt-get apt-get.stub
   install_stub id id.stub
   export STUB_ID_U=0
@@ -166,7 +169,12 @@ teardown() {
   assert_output_contains "Installing Linux packages with apt-get"
   assert_log_contains "apt-get update"
   assert_log_contains "apt-get install -y"
+  assert_log_contains "zsh"
   assert_log_not_contains "sudo "
+
+  package_line="$(grep -n 'apt-get install -y' "$TEST_STUB_LOG" | head -n 1 | cut -d: -f1)"
+  curl_line="$(grep -n '^curl ' "$TEST_STUB_LOG" | head -n 1 | cut -d: -f1)"
+  [ "$package_line" -lt "$curl_line" ]
 }
 
 @test "install rejects unknown profiles" {

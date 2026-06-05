@@ -478,8 +478,8 @@ ensure_symlink "$DOTFILES_DIR/config/tmux.conf" "$HOME/.tmux.conf"
 ensure_symlink "$DOTFILES_DIR/config/starship.toml" "$HOME/.config/starship.toml"
 link_relay_config
 
+run_linux_packages
 install_oh_my_zsh_if_missing
 run_brew_bundles
-run_linux_packages
 run_macos_defaults
 install_tpm_if_missing

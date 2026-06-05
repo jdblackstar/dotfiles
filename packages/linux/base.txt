@@ -5,3 +5,4 @@ neovim
 python3
 ripgrep
 tmux
+zsh
