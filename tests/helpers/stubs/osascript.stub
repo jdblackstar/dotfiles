@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'osascript %s\n' "$*" >>"$TEST_STUB_LOG"
+exit 0
