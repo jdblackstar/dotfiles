@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TEST_STUB_LOG:?}"
+printf 'sudo %s\n' "$*" >>"$TEST_STUB_LOG"
+exit 0

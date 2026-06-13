@@ -126,9 +126,12 @@ teardown() {
 @test "personal profile applies macOS defaults on Darwin and restarts Dock" {
   export OSTYPE="darwin23"
   export STUB_UNAME_S="Darwin"
-  write_minimal_macos_fixture "$TEST_DOTFILES"
   install_stub brew brew.stub
+  install_stub defaults defaults.stub
   install_stub killall killall.stub
+  install_stub osascript osascript.stub
+  install_stub sleep sleep.stub
+  install_stub sudo sudo.stub
   export DOTFILES_TEST_BREW_BIN="$TEST_BIN/brew"
   export STUB_BREW_BUNDLE_CHECK_STATUS=0
 
@@ -136,7 +139,7 @@ teardown() {
 
   [ "$status" -eq 0 ]
   assert_output_contains "Applying macOS defaults"
-  assert_output_contains "fixture-macos-ran"
+  assert_log_contains "defaults write com.apple.dock mru-spaces -bool false"
   assert_log_contains "killall Dock"
 }
 
