@@ -15,5 +15,6 @@ brew "tmux"
 brew "unixodbc"
 brew "uv"
 brew "zoxide"
+brew "jdblackstar/tap/relay", trusted: true
 brew "microsoft/mssql-release/msodbcsql17"
 cask "ghostty"
