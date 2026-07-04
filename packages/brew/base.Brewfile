@@ -1,5 +1,7 @@
+tap "anomalyco/tap"
 tap "jdblackstar/tap"
 tap "microsoft/mssql-release", "https://github.com/Microsoft/homebrew-mssql-release"
+tap "steipete/tap", trusted: { casks: ["codexbar"] }
 brew "bats-core"
 brew "cask"
 brew "d2"
@@ -17,6 +19,7 @@ brew "tmux"
 brew "unixodbc"
 brew "uv"
 brew "zoxide"
+brew "anomalyco/tap/opencode", trusted: true
+brew "jdblackstar/tap/pin", trusted: true
 brew "jdblackstar/tap/relay", trusted: true
-brew "microsoft/mssql-release/msodbcsql17"
 cask "ghostty"
