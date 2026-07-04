@@ -1,4 +1,5 @@
 cask "1password"
+cask "steipete/tap/codexbar", trusted: true
 cask "cursor"
 cask "discord"
 cask "slack"
