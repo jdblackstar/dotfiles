@@ -22,4 +22,5 @@ brew "zoxide"
 brew "anomalyco/tap/opencode", trusted: true
 brew "jdblackstar/tap/pin", trusted: true
 brew "jdblackstar/tap/relay", trusted: true
+brew "microsoft/mssql-release/msodbcsql17", trusted: true
 cask "ghostty"
