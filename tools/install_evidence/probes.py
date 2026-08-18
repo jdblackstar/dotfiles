@@ -68,6 +68,7 @@ _ERROR_CODES = {
 }
 MAX_FIXTURE_BYTES = 1024 * 1024
 MAX_OBSERVATIONS_PER_PROBE = 8
+MAX_FIXTURE_NESTING = 128
 _FIXTURE_DATA_UNSET = object()
 
 
@@ -573,6 +574,30 @@ def _validate_record(
     return validated
 
 
+def _check_fixture_nesting(text: str) -> None:
+    """Reject excessive JSON structure depth before parser-specific limits."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for character in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            continue
+        if character == '"':
+            in_string = True
+        elif character in "[{":
+            depth += 1
+            if depth > MAX_FIXTURE_NESTING:
+                raise ProbeError("fixture JSON nesting is too deep")
+        elif character in "]}":
+            depth = max(0, depth - 1)
+
+
 def read_fixture(path: Path) -> Any:
     """Read one bounded regular JSON file without following its final link."""
     nofollow = getattr(os, "O_NOFOLLOW", None)
@@ -619,6 +644,7 @@ def read_fixture(path: Path) -> Any:
         text = raw.decode("utf-8")
     except UnicodeError:
         raise ProbeError("fixture data is not valid UTF-8")
+    _check_fixture_nesting(text)
     try:
         return json.loads(text)
     except json.JSONDecodeError as exc:

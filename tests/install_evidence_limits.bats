@@ -45,6 +45,19 @@ PY
   assert_output_contains "fixture JSON nesting is too deep"
 }
 
+@test "fixture JSON nesting ignores brackets inside strings" {
+  run python3 - "$PROJECT_ROOT" <<'PY'
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from tools.install_evidence.probes import _check_fixture_nesting
+
+_check_fixture_nesting('{"value":"' + ('[' * 200) + '"}')
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "fixture input has a fixed byte limit" {
   local fixture="$TEST_ROOT/oversized.json"
   python3 - "$fixture" <<'PY'
