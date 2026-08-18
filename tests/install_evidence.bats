@@ -191,16 +191,18 @@ import sys
 
 with open(sys.argv[1], encoding="utf-8") as handle:
     document = json.load(handle)
-assert document["schema_version"] == "1.1.0"
+assert document["schema_version"] == "1.2.0"
 assert document["collection"]["timestamp"] == "2000-01-01T00:00:00Z"
 assert document["collection"]["sanitization"]["home"] == "<home>"
 assert document["collection"]["privacy"] == {
     "distribution": "local_only",
-    "mode": "public_safe",
+    "mode": "fixture_replay",
+    "provenance": "caller_supplied_unverified",
     "raw_command_paths_retained": False,
     "raw_error_messages_retained": False,
     "raw_marker_values_retained": False,
     "raw_symlink_targets_retained": False,
+    "safe_to_publish": False,
 }
 relations = {edge["relation"] for edge in document["graph"]["edges"]}
 assert {
@@ -333,7 +335,9 @@ PY
   prepare_agent_live_home
   install_stub git git.stub
 
-  run "$PROJECT_ROOT/install-evidence" --live --profile agent --platform macos
+  run /usr/bin/env PATH="$TEST_BIN" PYTHONPATH="$PROJECT_ROOT" \
+    "$TEST_BIN/python3" -m tools.install_evidence.cli \
+    --live --profile agent --platform macos
 
   [ "$status" -eq 1 ]
   assert_output_contains "unexpected_command_resolution"
@@ -341,6 +345,234 @@ PY
   [[ "$output" != *"$TEST_ROOT"* ]]
   [[ "$output" != *"$HOME"* ]]
   [ ! -s "$TEST_STUB_LOG" ]
+}
+
+@test "directory probes reject symlinks without inspecting their targets" {
+  mkdir -p "$HOME/real-plugin/.git" "$HOME/plugin"
+  rmdir "$HOME/plugin"
+  ln -s "$HOME/real-plugin" "$HOME/plugin"
+  ln -s "$HOME/real-plugin/.git" "$HOME/plugin-git"
+
+  run python3 - "$PROJECT_ROOT" "$HOME" <<'PY'
+import pathlib
+import sys
+
+project_root, home = map(pathlib.Path, sys.argv[1:])
+sys.path.insert(0, str(project_root))
+
+from tools.install_evidence.probes import ProbeDefinition, collect_live
+
+collection = collect_live(
+    (
+        ProbeDefinition("directory.plugin", "directory", "$HOME/plugin"),
+        ProbeDefinition("git-directory.plugin", "git_directory", "$HOME/plugin-git"),
+    ),
+    "agent",
+    "macos",
+    home,
+    home / ".dotfiles",
+    project_root,
+)
+assert collection.observations["directory.plugin"] == (
+    {"status": "other", "type": "symlink"},
+)
+assert collection.observations["git-directory.plugin"] == (
+    {"status": "other", "type": "symlink"},
+)
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "marker probes use one no-follow nonblocking descriptor" {
+  mkdir -p "$HOME/.config/dotfiles"
+  printf '%s\n' "agent" >"$HOME/.config/dotfiles/profile"
+
+  run python3 - "$PROJECT_ROOT" "$HOME" <<'PY'
+import os
+import pathlib
+import sys
+from unittest import mock
+
+project_root, home = map(pathlib.Path, sys.argv[1:])
+sys.path.insert(0, str(project_root))
+
+from tools.install_evidence import probes
+
+definition = probes.ProbeDefinition(
+    "marker.profile", "marker", "$HOME/.config/dotfiles/profile", "agent"
+)
+real_open = os.open
+real_fstat = os.fstat
+real_read = os.read
+marker_open_calls = []
+
+def tracked_open(path, flags, *args, **kwargs):
+    if path == "profile":
+        marker_open_calls.append((flags, kwargs.get("dir_fd")))
+    return real_open(path, flags, *args, **kwargs)
+
+with (
+    mock.patch.object(
+        probes.os,
+        "lstat",
+        side_effect=AssertionError("marker probe must not check then reopen"),
+    ),
+    mock.patch.object(probes.os, "open", side_effect=tracked_open) as opened,
+    mock.patch.object(probes.os, "fstat", wraps=real_fstat) as fstat_called,
+    mock.patch.object(probes.os, "read", wraps=real_read) as read_called,
+):
+    collection = probes.collect_live(
+        (definition,),
+        "agent",
+        "macos",
+        home,
+        home / ".dotfiles",
+        project_root,
+    )
+
+assert collection.observations["marker.profile"] == (
+    {"status": "present", "comparison": "matched"},
+)
+assert opened.call_count >= 1
+assert fstat_called.call_count == 1
+assert read_called.call_count == 1
+assert len(marker_open_calls) == 1
+flags, directory_descriptor = marker_open_calls[0]
+assert flags & os.O_NOFOLLOW
+assert flags & os.O_NONBLOCK
+assert directory_descriptor is not None
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "marker probes reject symlinks and FIFOs without reading them" {
+  local marker="$HOME/.config/dotfiles/profile"
+  local private_value="$TEST_ROOT/private-marker"
+  local fifo="$HOME/.config/dotfiles/platform"
+  mkdir -p "$HOME/.config/dotfiles"
+  printf '%s\n' "must-not-be-read" >"$private_value"
+  ln -s "$private_value" "$marker"
+  mkfifo "$fifo"
+
+  run python3 - "$PROJECT_ROOT" "$HOME" <<'PY'
+import pathlib
+import sys
+
+project_root, home = map(pathlib.Path, sys.argv[1:])
+sys.path.insert(0, str(project_root))
+
+from tools.install_evidence.probes import ProbeDefinition, collect_live
+
+collection = collect_live(
+    (
+        ProbeDefinition(
+            "marker.profile", "marker", "$HOME/.config/dotfiles/profile", "agent"
+        ),
+        ProbeDefinition(
+            "marker.platform", "marker", "$HOME/.config/dotfiles/platform", "macos"
+        ),
+    ),
+    "agent",
+    "macos",
+    home,
+    home / ".dotfiles",
+    project_root,
+)
+assert collection.observations["marker.profile"] == ({"status": "missing"},)
+assert collection.observations["marker.platform"] == ({"status": "missing"},)
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "live path probes reject symbolic links in parent directories" {
+  local external="$TEST_ROOT/external"
+  mkdir -p "$external/plugin" "$external/repository/config" "$HOME"
+  printf '%s\n' "agent" >"$external/profile"
+  ln -s "$external/repository/config/.zshrc" "$external/zshrc"
+  ln -s "$external" "$HOME/redirect"
+
+  run python3 - "$PROJECT_ROOT" "$HOME" <<'PY'
+import pathlib
+import sys
+
+project_root, home = map(pathlib.Path, sys.argv[1:])
+sys.path.insert(0, str(project_root))
+
+from tools.install_evidence.probes import ProbeDefinition, collect_live
+
+collection = collect_live(
+    (
+        ProbeDefinition("marker.parent", "marker", "$HOME/redirect/profile", "agent"),
+        ProbeDefinition(
+            "symlink.parent",
+            "symlink",
+            "$HOME/redirect/zshrc",
+            "<repo>/config/.zshrc",
+        ),
+        ProbeDefinition("directory.parent", "directory", "$HOME/redirect/plugin"),
+        ProbeDefinition(
+            "git-directory.parent", "git_directory", "$HOME/redirect/plugin"
+        ),
+    ),
+    "agent",
+    "macos",
+    home,
+    home / ".dotfiles",
+    project_root,
+)
+for probe_id in (
+    "marker.parent",
+    "symlink.parent",
+    "directory.parent",
+    "git-directory.parent",
+):
+    record = collection.observations[probe_id][0]
+    assert record == {"status": "error", "error_code": "io_error"}
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "command probes do not trust linked commands or PATH directories" {
+  local real_bin="$TEST_ROOT/real-bin"
+  local linked_bin="$TEST_ROOT/linked-bin"
+  mkdir -p "$real_bin"
+  printf '%s\n' '#!/bin/sh' 'exit 0' >"$real_bin/tool"
+  chmod +x "$real_bin/tool"
+  ln -s "$real_bin/tool" "$TEST_BIN/tool"
+  ln -s "$real_bin" "$linked_bin"
+
+  run python3 - "$PROJECT_ROOT" "$TEST_BIN" "$linked_bin" <<'PY'
+import os
+import pathlib
+import sys
+
+project_root, test_bin, linked_bin = map(pathlib.Path, sys.argv[1:])
+sys.path.insert(0, str(project_root))
+
+from tools.install_evidence.probes import ProbeDefinition, collect_live
+
+definition = ProbeDefinition(
+    "command.tool", "command", command="tool", expected_roots=(str(test_bin),)
+)
+for path_value in (str(test_bin), str(linked_bin)):
+    os.environ["PATH"] = path_value
+    collection = collect_live(
+        (definition,),
+        "agent",
+        "macos",
+        pathlib.Path("/synthetic/home"),
+        pathlib.Path("/synthetic/home/.dotfiles"),
+        project_root,
+    )
+    record = collection.observations["command.tool"][0]
+    assert record == {"status": "error", "error_code": "io_error"}
+PY
+
+  [ "$status" -eq 0 ]
 }
 
 @test "lexical traversal cannot masquerade as an allowed path scope" {
@@ -360,6 +592,12 @@ assert _target_scope(
     pathlib.Path("/managed/home/repository"),
     pathlib.Path("/source/repository"),
 ) == "external"
+assert _target_scope(
+    "/managed/home/source/config",
+    pathlib.Path("/managed/home"),
+    pathlib.Path("/managed/home/installed"),
+    pathlib.Path("/managed/home/source"),
+) == "source_repo"
 PY
 
   [ "$status" -eq 0 ]
@@ -374,8 +612,9 @@ PY
   rm "$HOME/.zshrc"
   ln -s "$secret_target" "$HOME/.zshrc"
 
-  run "$PROJECT_ROOT/install-evidence" --live --profile agent --platform macos \
-    --format json
+  run /usr/bin/env PATH="$TEST_BIN" PYTHONPATH="$PROJECT_ROOT" \
+    "$TEST_BIN/python3" -m tools.install_evidence.cli \
+    --live --profile agent --platform macos --format json
 
   [ "$status" -eq 1 ]
   [[ "$output" != *"$secret_marker"* ]]

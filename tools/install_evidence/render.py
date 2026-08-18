@@ -8,6 +8,7 @@ ISSUE_STATES = ("failed", "conflicted", "unknown", "skipped")
 
 def render_summary(document: Dict[str, Any]) -> str:
     collection = document["collection"]
+    privacy = collection["privacy"]
     summary = document["summary"]
     counts = summary["claim_counts"]
     lines = [
@@ -54,6 +55,15 @@ def render_summary(document: Dict[str, Any]) -> str:
                     "    %s" % claim["explanation"],
                 ]
             )
+    if privacy["mode"] == "sanitized_local":
+        privacy_notice = (
+            "Privacy: sanitized live host state; not safe to publish or commit."
+        )
+    else:
+        privacy_notice = (
+            "Privacy: caller-supplied fixture replay; provenance is unverified; "
+            "not safe to publish."
+        )
     lines.extend(
         [
             "",
@@ -73,7 +83,7 @@ def render_summary(document: Dict[str, Any]) -> str:
                 summary["package_declarations"],
             ),
             "Read-only explanation only; no repair action was attempted.",
-            "Privacy: host-specific report context is local-only; do not commit it.",
+            privacy_notice,
         ]
     )
     return "\n".join(lines) + "\n"
@@ -84,9 +94,23 @@ def _dot_escape(value: str) -> str:
 
 
 def render_dot(document: Dict[str, Any]) -> str:
+    privacy = document["collection"]["privacy"]
+    privacy_fields = [
+        "distribution=%s" % privacy["distribution"],
+        "safe_to_publish=%s" % str(privacy["safe_to_publish"]).lower(),
+    ]
+    if "contains_host_state" in privacy:
+        privacy_fields.append(
+            "contains_host_state=%s"
+            % str(privacy["contains_host_state"]).lower()
+        )
+    if "provenance" in privacy:
+        privacy_fields.append("provenance=%s" % privacy["provenance"])
+    privacy_warning = "Privacy: " + "; ".join(privacy_fields)
     lines = [
         "digraph install_evidence {",
-        '  graph [rankdir="LR"];',
+        '  graph [rankdir="LR", label="%s", labelloc="t"];'
+        % _dot_escape(privacy_warning),
         '  node [fontname="Helvetica"];',
     ]
     colors = {

@@ -2,10 +2,10 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import errno
 import json
 import os
 from pathlib import Path, PurePosixPath
-import shutil
 import stat
 from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
 
@@ -66,6 +66,9 @@ _ERROR_CODES = {
     "io_error",
     "fixture_error",
 }
+MAX_FIXTURE_BYTES = 1024 * 1024
+MAX_OBSERVATIONS_PER_PROBE = 8
+_FIXTURE_DATA_UNSET = object()
 
 
 def utc_now() -> str:
@@ -120,6 +123,220 @@ def _error_record(exc: BaseException) -> Mapping[str, str]:
     return {"status": "error", "error_code": _error_code(exc)}
 
 
+def _directory_flags(no_follow: bool) -> int:
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NONBLOCK", 0)
+    if no_follow:
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+    return flags
+
+
+def _declared_root_and_parts(
+    template: str, home: Path, installed_repo: Path
+) -> Tuple[Path, Tuple[str, ...]]:
+    if template.startswith("$HOME/"):
+        root = home
+        relative = template[len("$HOME/") :]
+    elif template.startswith("$DOTFILES_DIR/"):
+        root = installed_repo
+        relative = template[len("$DOTFILES_DIR/") :]
+    else:
+        raise ProbeError("path must identify an entry below a trusted root")
+    pure = PurePosixPath(relative)
+    if pure.is_absolute() or ".." in pure.parts or not pure.parts:
+        raise ProbeError("unsafe declared path")
+    return root, tuple(pure.parts)
+
+
+def _open_declared_parent(
+    template: str, home: Path, installed_repo: Path
+) -> Tuple[int, str]:
+    """Open each directory below a trusted root without following links."""
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    directory_flag = getattr(os, "O_DIRECTORY", None)
+    if nofollow is None or directory_flag is None:
+        raise OSError("safe path traversal is not supported")
+
+    root, parts = _declared_root_and_parts(template, home, installed_repo)
+    descriptor = os.open(str(root), _directory_flags(no_follow=False))
+    try:
+        for component in parts[:-1]:
+            next_descriptor = os.open(
+                component,
+                _directory_flags(no_follow=True),
+                dir_fd=descriptor,
+            )
+            os.close(descriptor)
+            descriptor = next_descriptor
+    except BaseException:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        raise
+    return descriptor, parts[-1]
+
+
+def _marker_record(
+    parent_descriptor: int, name: str, expected: Optional[str]
+) -> Mapping[str, str]:
+    """Read a small regular marker through one non-following file descriptor."""
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None:
+        return {"status": "error", "error_code": "io_error"}
+
+    flags = os.O_RDONLY | nofollow
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NONBLOCK", 0)
+    try:
+        descriptor = os.open(name, flags, dir_fd=parent_descriptor)
+    except FileNotFoundError:
+        return {"status": "missing"}
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            return {"status": "missing"}
+        return _error_record(exc)
+
+    record: Mapping[str, str]
+    try:
+        mode = os.fstat(descriptor).st_mode
+        if not stat.S_ISREG(mode):
+            record = {"status": "missing"}
+        else:
+            raw = os.read(descriptor, 257)
+            if len(raw) > 256:
+                record = {"status": "error", "error_code": "marker_too_large"}
+            else:
+                value = raw.decode("utf-8").strip()
+                record = {
+                    "status": "present",
+                    "comparison": "matched" if value == expected else "mismatched",
+                }
+    except (OSError, UnicodeError) as exc:
+        record = _error_record(exc)
+    finally:
+        try:
+            os.close(descriptor)
+        except OSError as exc:
+            record = _error_record(exc)
+    return record
+
+
+def _mode_is_executable_for_current_user(metadata: os.stat_result) -> bool:
+    if not stat.S_ISREG(metadata.st_mode):
+        return False
+    if os.geteuid() == 0:
+        return bool(metadata.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
+    if metadata.st_uid == os.geteuid():
+        return bool(metadata.st_mode & stat.S_IXUSR)
+    groups = {os.getegid(), *os.getgroups()}
+    if metadata.st_gid in groups:
+        return bool(metadata.st_mode & stat.S_IXGRP)
+    return bool(metadata.st_mode & stat.S_IXOTH)
+
+
+def _executable_at(
+    directory_descriptor: int, command: str, metadata: os.stat_result
+) -> Optional[bool]:
+    """Check execute access and reject a path that changes during the check."""
+    try:
+        executable = os.access(
+            command,
+            os.X_OK,
+            dir_fd=directory_descriptor,
+            follow_symlinks=False,
+        )
+    except (NotImplementedError, TypeError):
+        return _mode_is_executable_for_current_user(metadata)
+    try:
+        current = os.stat(
+            command, dir_fd=directory_descriptor, follow_symlinks=False
+        )
+    except OSError:
+        return None
+    initial_identity = (metadata.st_dev, metadata.st_ino, metadata.st_mode)
+    current_identity = (current.st_dev, current.st_ino, current.st_mode)
+    if initial_identity != current_identity or stat.S_ISLNK(current.st_mode):
+        return None
+    return executable
+
+
+def _command_record(
+    command: str, expected_roots: Sequence[str]
+) -> Mapping[str, str]:
+    """Resolve a command without following a PATH-directory or command link."""
+    if not command or os.sep in command or (os.altsep and os.altsep in command):
+        return {"status": "error", "error_code": "io_error"}
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    directory_flag = getattr(os, "O_DIRECTORY", None)
+    if nofollow is None or directory_flag is None:
+        return {"status": "error", "error_code": "io_error"}
+
+    for entry in os.environ.get("PATH", os.defpath).split(os.pathsep):
+        directory = entry or os.curdir
+        try:
+            directory_metadata = os.lstat(directory)
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            return _error_record(exc)
+        directory_mode = directory_metadata.st_mode
+        if stat.S_ISLNK(directory_mode):
+            return {"status": "error", "error_code": "io_error"}
+        if not stat.S_ISDIR(directory_mode):
+            continue
+
+        try:
+            descriptor = os.open(directory, _directory_flags(no_follow=True))
+        except FileNotFoundError:
+            continue
+        except OSError as exc:
+            return _error_record(exc)
+        try:
+            try:
+                opened_directory = os.fstat(descriptor)
+            except OSError as exc:
+                return _error_record(exc)
+            before_identity = (
+                directory_metadata.st_mode,
+                directory_metadata.st_dev,
+                directory_metadata.st_ino,
+            )
+            opened_identity = (
+                opened_directory.st_mode,
+                opened_directory.st_dev,
+                opened_directory.st_ino,
+            )
+            if before_identity != opened_identity:
+                return {"status": "error", "error_code": "io_error"}
+            try:
+                metadata = os.stat(
+                    command, dir_fd=descriptor, follow_symlinks=False
+                )
+            except FileNotFoundError:
+                continue
+            except OSError as exc:
+                return _error_record(exc)
+            if stat.S_ISLNK(metadata.st_mode):
+                return {"status": "error", "error_code": "io_error"}
+            executable = _executable_at(descriptor, command, metadata)
+            if executable is None:
+                return {"status": "error", "error_code": "io_error"}
+            if executable:
+                resolved = os.path.join(directory, command)
+                return {
+                    "status": "present",
+                    "resolution": _command_resolution(resolved, expected_roots),
+                }
+        finally:
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+    return {"status": "missing"}
+
+
 def _target_scope(
     target: str, home: Path, installed_repo: Path, source_repo: Path
 ) -> str:
@@ -128,8 +345,8 @@ def _target_scope(
     target_path = Path(os.path.normpath(target))
     for root, scope in (
         (installed_repo, "installed_repo"),
-        (home, "home"),
         (source_repo, "source_repo"),
+        (home, "home"),
     ):
         try:
             target_path.relative_to(Path(os.path.normpath(str(root))))
@@ -168,105 +385,94 @@ def collect_live(
             continue
         try:
             if definition.kind == "command":
-                resolved = shutil.which(definition.command or "")
-                record: Dict[str, Any]
-                if resolved is None:
-                    record = {"status": "missing"}
-                else:
-                    record = {
-                        "status": "present",
-                        "resolution": _command_resolution(
-                            resolved, definition.expected_roots
-                        ),
-                    }
+                record: Mapping[str, Any] = _command_record(
+                    definition.command or "", definition.expected_roots
+                )
             else:
                 if definition.path is None:
                     raise ProbeError("path probe missing declared path")
-                path = expand_declared_path(definition.path, home, installed_repo)
                 try:
-                    mode = os.lstat(str(path)).st_mode
+                    parent_descriptor, name = _open_declared_parent(
+                        definition.path, home, installed_repo
+                    )
                 except FileNotFoundError:
                     record = {"status": "missing"}
                 except OSError as exc:
                     record = _error_record(exc)
                 else:
-                    observed_type = _file_type(mode)
-                    if definition.kind == "symlink":
-                        if observed_type != "symlink":
-                            record = {"status": "other", "type": observed_type}
+                    try:
+                        if definition.kind == "marker":
+                            record = _marker_record(
+                                parent_descriptor, name, definition.expected
+                            )
                         else:
                             try:
-                                target = os.readlink(str(path))
-                                expected_target = definition.expected or ""
-                                expected_path = expected_target.replace(
-                                    "<repo>", str(installed_repo), 1
-                                ).replace("<home>", str(home), 1)
-                                comparison = (
-                                    "matched"
-                                    if target.rstrip("/") == expected_path.rstrip("/")
-                                    else "mismatched"
-                                )
-                                record = {
-                                    "status": "symlink",
-                                    "comparison": comparison,
-                                }
-                                if comparison == "mismatched":
-                                    record["target_scope"] = _target_scope(
-                                        target, home, installed_repo, source_repo
-                                    )
+                                mode = os.stat(
+                                    name,
+                                    dir_fd=parent_descriptor,
+                                    follow_symlinks=False,
+                                ).st_mode
+                            except FileNotFoundError:
+                                record = {"status": "missing"}
                             except OSError as exc:
                                 record = _error_record(exc)
-                    elif definition.kind == "marker":
-                        if observed_type != "file":
-                            record = {"status": "missing"}
-                        else:
-                            try:
-                                with path.open("rb") as handle:
-                                    raw = handle.read(257)
-                                if len(raw) > 256:
-                                    raise ProbeError(
-                                        "marker exceeds the 256-byte read limit"
-                                    )
-                                value = raw.decode("utf-8").strip()
-                                record = {
-                                    "status": "present",
-                                    "comparison": (
-                                        "matched"
-                                        if value == definition.expected
-                                        else "mismatched"
-                                    ),
-                                }
-                            except ProbeError as exc:
-                                record = {
-                                    "status": "error",
-                                    "error_code": (
-                                        "marker_too_large"
-                                        if "256-byte" in str(exc)
-                                        else "io_error"
-                                    ),
-                                }
-                            except (OSError, UnicodeError) as exc:
-                                record = _error_record(exc)
-                    elif definition.kind in ("directory", "git_directory"):
-                        if observed_type == "directory":
-                            record = {"status": "directory"}
-                        elif observed_type == "symlink":
-                            try:
-                                if path.is_dir():
-                                    record = {"status": "directory"}
+                            else:
+                                observed_type = _file_type(mode)
+                                if definition.kind == "symlink":
+                                    if observed_type != "symlink":
+                                        record = {
+                                            "status": "other",
+                                            "type": observed_type,
+                                        }
+                                    else:
+                                        try:
+                                            target = os.readlink(
+                                                name, dir_fd=parent_descriptor
+                                            )
+                                            expected_target = definition.expected or ""
+                                            expected_path = expected_target.replace(
+                                                "<repo>", str(installed_repo), 1
+                                            ).replace("<home>", str(home), 1)
+                                            comparison = (
+                                                "matched"
+                                                if target.rstrip("/")
+                                                == expected_path.rstrip("/")
+                                                else "mismatched"
+                                            )
+                                            record = {
+                                                "status": "symlink",
+                                                "comparison": comparison,
+                                            }
+                                            if comparison == "mismatched":
+                                                record["target_scope"] = _target_scope(
+                                                    target,
+                                                    home,
+                                                    installed_repo,
+                                                    source_repo,
+                                                )
+                                        except OSError as exc:
+                                            record = _error_record(exc)
+                                elif definition.kind in (
+                                    "directory",
+                                    "git_directory",
+                                ):
+                                    if observed_type == "directory":
+                                        record = {"status": "directory"}
+                                    else:
+                                        record = {
+                                            "status": "other",
+                                            "type": observed_type,
+                                        }
                                 else:
-                                    record = {
-                                        "status": "other",
-                                        "type": observed_type,
-                                    }
-                            except OSError as exc:
-                                record = _error_record(exc)
-                        else:
-                            record = {"status": "other", "type": observed_type}
-                    else:
-                        raise ProbeError(
-                            "unsupported probe kind: %s" % definition.kind
-                        )
+                                    raise ProbeError(
+                                        "unsupported probe kind: %s"
+                                        % definition.kind
+                                    )
+                    finally:
+                        try:
+                            os.close(parent_descriptor)
+                        except OSError:
+                            pass
             observations[definition.id] = (record,)
         except ProbeError:
             raise
@@ -367,20 +573,71 @@ def _validate_record(
     return validated
 
 
-def load_fixture(
-    path: Path, definitions: Sequence[ProbeDefinition], profile: Optional[str]
-) -> Collection:
+def read_fixture(path: Path) -> Any:
+    """Read one bounded regular JSON file without following its final link."""
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None:
+        raise ProbeError("safe fixture reads are not supported on this platform")
+
+    flags = os.O_RDONLY | nofollow
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NONBLOCK", 0)
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        descriptor = os.open(str(path), flags)
     except OSError:
         raise ProbeError("cannot read fixture data")
+
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ProbeError("fixture must be a regular file")
+        if metadata.st_size > MAX_FIXTURE_BYTES:
+            raise ProbeError("fixture exceeds the size limit")
+
+        chunks = []
+        remaining = MAX_FIXTURE_BYTES + 1
+        while remaining:
+            chunk = os.read(descriptor, min(65536, remaining))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        raw = b"".join(chunks)
+        if len(raw) > MAX_FIXTURE_BYTES:
+            raise ProbeError("fixture exceeds the size limit")
+    except ProbeError:
+        raise
+    except OSError:
+        raise ProbeError("cannot read fixture data")
+    finally:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+
+    try:
+        text = raw.decode("utf-8")
     except UnicodeError:
         raise ProbeError("fixture data is not valid UTF-8")
+    try:
+        return json.loads(text)
     except json.JSONDecodeError as exc:
         raise ProbeError(
             "fixture JSON is invalid at line %d column %d"
             % (exc.lineno, exc.colno)
         )
+    except RecursionError:
+        raise ProbeError("fixture JSON nesting is too deep")
+
+
+def load_fixture(
+    path: Path,
+    definitions: Sequence[ProbeDefinition],
+    profile: Optional[str],
+    data: Any = _FIXTURE_DATA_UNSET,
+) -> Collection:
+    if data is _FIXTURE_DATA_UNSET:
+        data = read_fixture(path)
     if not isinstance(data, dict):
         raise ProbeError("fixture root must be an object")
     allowed_root = {
@@ -428,6 +685,10 @@ def load_fixture(
         values = raw if isinstance(raw, list) else [raw]
         if not values:
             raise ProbeError("fixture observation %s is empty" % probe_id)
+        if len(values) > MAX_OBSERVATIONS_PER_PROBE:
+            raise ProbeError(
+                "fixture observation %s exceeds the record limit" % probe_id
+            )
         observations[probe_id] = tuple(
             _validate_record(by_id[probe_id], value) for value in values
         )

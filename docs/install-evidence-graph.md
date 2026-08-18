@@ -40,8 +40,9 @@ mkdir -p .install-evidence
   >.install-evidence/report.json
 ```
 
-Even local output is public-safe by default. The collector may inspect a raw
-value long enough to compare it, but discards it before graph construction:
+Live output is sanitized, but it is not public-safe. The collector may inspect
+a raw value long enough to compare it, but discards it before graph
+construction:
 
 - marker contents become only `matched` or `mismatched`;
 - command paths become only `allowed` or `unexpected`;
@@ -54,12 +55,26 @@ value long enough to compare it, but discards it before graph construction:
 
 Tracked source locations are retained as repository-relative path and line
 number; declaration text itself is not copied into reports. The selected
-profile, platform, and collection timestamp remain explicit report context
-required by the schema; this is why a real report is still a local artifact
-rather than something to commit.
+profile, platform, collection timestamp, and classified health results remain
+explicit report context. These fields describe host state even when raw values
+are absent. Thus, a live report is a private local artifact and must not be
+published or committed.
 
-JSON marks this explicitly as `distribution: "local_only"`, and terminal
-summaries repeat the do-not-commit warning.
+Live JSON marks this boundary with `mode: "sanitized_local"`,
+`distribution: "local_only"`, `contains_host_state: true`, and
+`safe_to_publish: false`. Terminal summaries also state that live output is not
+safe to publish or commit. DOT output includes a visible graph label with
+`distribution=local_only`, `safe_to_publish=false`, and, for live output,
+`contains_host_state=true`.
+
+Fixture reports use `collection.mode: "fixture"` together with
+`privacy.mode: "fixture_replay"`,
+`provenance: "caller_supplied_unverified"`, and
+`safe_to_publish: false`. The loader can validate the safe fixture grammar, but
+it cannot prove how the caller made the observations. Thus, fixture data can
+contain classified host state even when it contains no raw paths or values.
+The tracked fixtures are reviewed synthetic test data, but the report does not
+grant that status to an arbitrary caller-supplied fixture.
 
 ## Architecture
 
@@ -173,10 +188,11 @@ block required health.
 
 ## JSON schema
 
-The stable JSON document currently uses `schema_version: "1.1.0"` and contains:
+The stable JSON document currently uses `schema_version: "1.2.0"` and contains:
 
 - `collection`: mode, timestamp, profile, platform, prefix-sanitization tokens,
-  and machine-readable public-safe privacy guarantees;
+  and a machine-readable privacy contract. Live reports are sanitized local
+  host-state reports and explicitly state that they are not safe to publish;
 - `summary`: health state, state counts, mapped verifier-check count, and
   selected manifest declaration count;
 - `claims`: deterministically ordered states, rules, explanations, source
@@ -198,11 +214,15 @@ error codes.
 
 Live mode executes no subprocesses. Its complete allowlist is:
 
-1. `lstat` on exact marker, verifier, or TPM paths declared by the repository;
-2. `readlink` on exact verifier-declared managed links;
-3. a bounded read of at most 256 bytes from the two exact marker files;
-4. directory/type checks for Oh My Zsh and TPM `.git`; and
-5. `PATH` resolution with `shutil.which`; the resolved command is never run.
+1. descriptor-relative traversal below the trusted home root, with every parent
+   directory opened without following symbolic links;
+2. no-follow type checks and `readlink` on exact verifier-declared paths;
+3. one no-follow file-descriptor read of up to 257 bytes from each exact marker
+   file, after verifying that it is a regular file; the extra byte lets the
+   probe accept at most 256 bytes;
+4. no-follow directory/type checks for Oh My Zsh and TPM `.git`; and
+5. no-follow `PATH` directory and command checks; linked entries become unknown,
+   and the command is never run.
 
 Destination probes must be rooted at `$HOME`; expected source paths must be
 rooted at the explicitly selected installed checkout. `..`, arbitrary absolute
@@ -251,7 +271,12 @@ An observation may be an object or a list of objects; any disagreeing facts
 produce `conflicted`, even if both observations report `present`. The loader
 rejects unknown probe IDs, keys, statuses, classifications, control characters,
 raw path/target fields, and free-form error strings. Fixture strings are never
-evaluated or used to define a filesystem probe.
+evaluated or used to define a filesystem probe. A fixture must be a regular file
+of at most 1 MiB, and its final path item cannot be a symbolic link. The caller
+selects the fixture path, so normal parent-path resolution is still permitted.
+One probe can contain at most eight observation records. FIFOs, directories,
+final-item symbolic links, oversized files, and excessively deep JSON are
+rejected before graph construction.
 
 Tracked healthy examples live in
 `tests/fixtures/install-evidence/healthy-personal-macos.json` and

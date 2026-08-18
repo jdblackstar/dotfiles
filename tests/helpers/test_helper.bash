@@ -6,6 +6,8 @@ PROJECT_ROOT="$(cd "$TEST_HELPER_DIR/../.." && pwd)"
 STUB_TEMPLATE_DIR="$TEST_HELPER_DIR/stubs"
 
 setup_test_env() {
+  local python_bin
+  python_bin="$(command -v python3)"
   export TEST_ROOT
   TEST_ROOT="$(mktemp -d)"
   export TEST_HOME="$TEST_ROOT/home"
@@ -15,6 +17,7 @@ setup_test_env() {
   export PATH="$TEST_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 
   mkdir -p "$TEST_HOME" "$TEST_BIN"
+  ln -s "$python_bin" "$TEST_BIN/python3"
   : >"$TEST_STUB_LOG"
 }
 

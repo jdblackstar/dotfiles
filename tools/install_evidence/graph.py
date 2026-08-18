@@ -591,6 +591,32 @@ def assemble_document(
     claims.append(health_claim)
 
     counts = Counter(claim["state"] for claim in claims if claim["id"] != health_id)
+    privacy = {
+        "distribution": "local_only",
+        "raw_marker_values_retained": False,
+        "raw_command_paths_retained": False,
+        "raw_symlink_targets_retained": False,
+        "raw_error_messages_retained": False,
+    }
+    if collection.mode == "live":
+        privacy.update(
+            {
+                "contains_host_state": True,
+                "mode": "sanitized_local",
+                "safe_to_publish": False,
+            }
+        )
+    elif collection.mode == "fixture":
+        privacy.update(
+            {
+                "mode": "fixture_replay",
+                "provenance": "caller_supplied_unverified",
+                "safe_to_publish": False,
+            }
+        )
+    else:
+        raise GraphError("unsupported collection mode")
+
     return {
         "schema_version": SCHEMA_VERSION,
         "collection": {
@@ -603,14 +629,7 @@ def assemble_document(
                 "installed_repository": "<repo>",
                 "source_repository": "<source-repo>",
             },
-            "privacy": {
-                "distribution": "local_only",
-                "mode": "public_safe",
-                "raw_marker_values_retained": False,
-                "raw_command_paths_retained": False,
-                "raw_symlink_targets_retained": False,
-                "raw_error_messages_retained": False,
-            },
+            "privacy": privacy,
         },
         "summary": {
             "health_claim_id": health_id,

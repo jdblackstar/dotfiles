@@ -10,7 +10,7 @@ from typing import Optional, Sequence
 
 from .graph import GraphError, assemble_document, discover_intent
 from .intent import IntentError, PLATFORM_NAMES, PROFILE_NAMES
-from .probes import ProbeError, collect_live, load_fixture
+from .probes import ProbeError, collect_live, load_fixture, read_fixture
 from .render import render_dot, render_summary
 
 
@@ -62,20 +62,6 @@ def _detected_platform() -> str:
     raise ProbeError("unsupported live platform")
 
 
-def _fixture_metadata(path: Path):
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except OSError:
-        raise ProbeError("cannot read fixture data")
-    except UnicodeError:
-        raise ProbeError("fixture data is not valid UTF-8")
-    except json.JSONDecodeError as exc:
-        raise ProbeError(
-            "fixture JSON is invalid at line %d column %d"
-            % (exc.lineno, exc.colno)
-        )
-
-
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
@@ -83,10 +69,10 @@ def _repo_root() -> Path:
 def _list_probes(definitions) -> str:
     lines = [
         "Read-only live probe allowlist (no subprocess execution):",
-        "  marker: bounded read (maximum 256 bytes) of an exact declared marker",
-        "  symlink: lstat + readlink of an exact verifier-declared path",
-        "  directory: lstat/type check of an exact verifier-declared path",
-        "  git_directory: directory check of the exact TPM .git path",
+        "  marker: no-follow read of at most 257 bytes; accepts at most 256",
+        "  symlink: descriptor-relative no-follow type check + readlink",
+        "  directory: descriptor-relative no-follow type check",
+        "  git_directory: descriptor-relative no-follow TPM .git check",
         "  command: PATH resolution only (the command is never executed)",
         "",
         "Resolved probe definitions:",
@@ -115,7 +101,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         repo_root = _repo_root()
         if args.fixture is not None:
             # Read profile/platform metadata once; fixture values still cannot define probes.
-            raw = _fixture_metadata(args.fixture)
+            raw = read_fixture(args.fixture)
             fixture_profile = raw.get("profile") if isinstance(raw, dict) else None
             fixture_platform = raw.get("platform") if isinstance(raw, dict) else None
             profile = args.profile or fixture_profile
@@ -133,7 +119,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             sys.stdout.write(_list_probes(intent.definitions))
             return 0
         if args.fixture is not None:
-            collection = load_fixture(args.fixture, intent.definitions, args.profile)
+            collection = load_fixture(
+                args.fixture, intent.definitions, args.profile, data=raw
+            )
             if collection.platform != selected_platform:
                 raise ProbeError("fixture platform does not match --platform")
         else:
