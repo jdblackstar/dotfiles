@@ -1,0 +1,74 @@
+{
+  "fixture_version": "2",
+  "profile": "personal",
+  "platform": "linux",
+  "collected_at": "2000-01-01T00:00:00Z",
+  "observations": {
+    "marker.profile": {
+      "status": "present",
+      "comparison": "matched"
+    },
+    "marker.platform": {
+      "status": "present",
+      "comparison": "matched"
+    },
+    "symlink.gitconfig": {
+      "status": "symlink",
+      "comparison": "matched"
+    },
+    "symlink.gitignore-global": {
+      "status": "symlink",
+      "comparison": "matched"
+    },
+    "symlink.zshrc": {
+      "status": "symlink",
+      "comparison": "matched"
+    },
+    "symlink.vimrc": {
+      "status": "symlink",
+      "comparison": "matched"
+    },
+    "symlink.tmux-conf": {
+      "status": "symlink",
+      "comparison": "matched"
+    },
+    "symlink.starship-config": {
+      "status": "symlink",
+      "comparison": "matched"
+    },
+    "symlink.relay-config": {
+      "status": "symlink",
+      "comparison": "matched"
+    },
+    "command.git": {
+      "status": "present",
+      "resolution": "allowed"
+    },
+    "command.curl": {
+      "status": "present",
+      "resolution": "allowed"
+    },
+    "command.rg": {
+      "status": "present",
+      "resolution": "allowed"
+    },
+    "command.fzf": {
+      "status": "present",
+      "resolution": "allowed"
+    },
+    "command.tmux": {
+      "status": "present",
+      "resolution": "allowed"
+    },
+    "command.nvim": {
+      "status": "present",
+      "resolution": "allowed"
+    },
+    "directory.oh-my-zsh": {
+      "status": "directory"
+    },
+    "directory.tpm-git": {
+      "status": "directory"
+    }
+  }
+}

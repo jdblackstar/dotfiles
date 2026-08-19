@@ -4,3 +4,6 @@
 **/*.lock.json
 
 __pycache__/
+
+# Host-specific evidence reports belong here and must never be committed.
+.install-evidence/

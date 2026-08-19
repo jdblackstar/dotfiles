@@ -125,6 +125,35 @@ bash tests/verify-mac-install.sh --profile work
 
 This checks expected profile symlinks, profile markers, a set of CLI tools that match [`packages/brew/base.Brewfile`](packages/brew/base.Brewfile), relay config, Oh My Zsh when the profile installs it, and TPM. It warns (but does not fail) if a profile-specific local Git identity file is missing. Override the repo location with `DOTFILES_DIR` if needed.
 
+### Experimental installation evidence graph
+
+`./install-evidence` explains how profile and manifest intent leads to each
+installation conclusion. Fixture replay is the safe development default:
+
+```zsh
+./install-evidence \
+  --fixture tests/fixtures/install-evidence/healthy-personal-macos.json
+```
+
+Live host inspection is never implicit. Opt into its fixed read-only probe
+allowlist with:
+
+```zsh
+./install-evidence --live --profile personal
+```
+
+Use `--format json` for the versioned graph document, `--format dot` for
+Graphviz DOT, or `--list-probes` to inspect the allowlist without collecting
+evidence. See [`docs/install-evidence-graph.md`](docs/install-evidence-graph.md)
+for the schema, state semantics, safety boundary, fixtures, and extension
+workflow.
+
+This is a public repository. Only synthetic classified observations belong in
+tracked fixtures. Live reports must not be committed; if a temporary report is
+needed, write it under the ignored `.install-evidence/` directory. The tool
+discards raw marker values, command paths, symlink targets, and OS error text
+before rendering or serialization.
+
 **What remains manual or environment-specific**
 
 - Signing into the Mac App Store or GUI apps installed via cask
