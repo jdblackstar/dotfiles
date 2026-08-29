@@ -1,7 +1,9 @@
 cask "1password"
-cask "steipete/tap/codexbar", trusted: true
+cask "codexbar"
 cask "cursor"
 cask "discord"
+cask "opencode-desktop"
+cask "openlogi"
 cask "slack"
 cask "spotify"
 cask "visual-studio-code"

@@ -4,6 +4,7 @@ tap "microsoft/mssql-release", "https://github.com/Microsoft/homebrew-mssql-rele
 tap "steipete/tap", trusted: { casks: ["codexbar"] }
 brew "bats-core"
 brew "cask"
+brew "cloc"
 brew "d2"
 brew "eza"
 brew "fzf"
