@@ -1,4 +1,5 @@
 tap "anomalyco/tap"
+tap "greptileai/tap"
 tap "jdblackstar/tap"
 tap "microsoft/mssql-release", "https://github.com/Microsoft/homebrew-mssql-release"
 tap "steipete/tap", trusted: { casks: ["codexbar"] }
@@ -21,6 +22,7 @@ brew "unixodbc"
 brew "uv"
 brew "zoxide"
 brew "anomalyco/tap/opencode", trusted: true
+brew "greptileai/tap/greptile", trusted: true
 brew "jdblackstar/tap/pin", trusted: true
 brew "jdblackstar/tap/relay", trusted: true
 brew "microsoft/mssql-release/msodbcsql17", trusted: true
