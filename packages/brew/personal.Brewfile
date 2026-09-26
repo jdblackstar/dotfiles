@@ -1,5 +1,5 @@
 cask "1password"
-cask "codexbar"
+cask "steipete/tap/codexbar", trusted: true
 cask "cursor"
 cask "discord"
 cask "opencode-desktop"
