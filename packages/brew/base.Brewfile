@@ -1,5 +1,7 @@
 tap "anomalyco/tap"
+tap "bro3886/tap", "https://github.com/BRO3886/homebrew-tap"
 tap "greptileai/tap"
+tap "homebrew/core"
 tap "jdblackstar/tap"
 tap "microsoft/mssql-release", "https://github.com/Microsoft/homebrew-mssql-release"
 tap "steipete/tap", trusted: { casks: ["codexbar"] }
@@ -14,6 +16,7 @@ brew "go"
 brew "neovim"
 brew "node"
 brew "python@3.12"
+brew "python@3.14"
 brew "ripgrep"
 brew "smartmontools"
 brew "starship"
@@ -22,6 +25,7 @@ brew "unixodbc"
 brew "uv"
 brew "zoxide"
 brew "anomalyco/tap/opencode", trusted: true
+brew "bro3886/tap/ical", trusted: true
 brew "greptileai/tap/greptile", trusted: true
 brew "jdblackstar/tap/pin", trusted: true
 brew "jdblackstar/tap/relay", trusted: true
