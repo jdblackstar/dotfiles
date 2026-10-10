@@ -5,6 +5,7 @@ cask "discord"
 cask "opencode-desktop"
 cask "openlogi"
 cask "slack"
+cask "crmne/tap/spotifast", trusted: true
 cask "spotify"
 cask "visual-studio-code"
 vscode "akamud.vscode-theme-onedark"
