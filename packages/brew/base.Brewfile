@@ -1,5 +1,6 @@
 tap "anomalyco/tap"
 tap "bro3886/tap", "https://github.com/BRO3886/homebrew-tap"
+tap "crmne/tap", trusted: { casks: ["spotifast"] }
 tap "greptileai/tap"
 tap "homebrew/core"
 tap "jdblackstar/tap"
